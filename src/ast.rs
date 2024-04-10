@@ -8,7 +8,7 @@ pub struct Identifier(pub String);
 #[derive(Debug, Clone)]
 pub enum Literal {
     String(String),
-    Integer(i64),
+    Number(f64),
 }
 
 #[derive(Debug, Clone)]

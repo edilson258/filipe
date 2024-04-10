@@ -16,7 +16,7 @@ pub enum Token {
     Slash,
 
     String(String),
-    Integer(i64),
+    Number(f64),
 
     Identifier(String),
 }
@@ -35,7 +35,7 @@ impl fmt::Display for Token {
             Self::Asterisk => write!(f, "*"),
             Self::Slash => write!(f, "/"),
             Self::String(val) => write!(f, "{}", val),
-            Self::Integer(val) => write!(f, "{}", val),
+            Self::Number(val) => write!(f, "{}", val),
             Self::Identifier(name) => write!(f, "{}", name),
         }
     }

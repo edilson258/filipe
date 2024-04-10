@@ -95,8 +95,8 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_number(&mut self) -> Token {
-        let literal = self.chop_while(|x| x.is_numeric()).parse::<i64>().unwrap();
-        return Token::Integer(literal);
+        let literal = self.chop_while(|x| x.is_numeric() || x == '.');
+        return Token::Number(literal.parse::<f64>().unwrap());
     }
 
     fn skip_whitespace(&mut self) {

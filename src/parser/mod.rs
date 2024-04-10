@@ -94,7 +94,7 @@ impl<'a> Parser<'a> {
         let mut left = match self.curr_token {
             Token::Identifier(_) => self.parse_identifier_expr(),
             Token::String(_) => self.parse_string_expr(),
-            Token::Integer(_) => self.parse_integer_expr(),
+            Token::Number(_) => self.parse_number_expr(),
             _ => {
                 let token = self.curr_token.clone();
                 self.unexpected_token_error(&token);
@@ -202,9 +202,9 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_integer_expr(&self) -> Option<Expr> {
+    fn parse_number_expr(&self) -> Option<Expr> {
         match self.curr_token.clone() {
-            Token::Integer(val) => Some(Expr::Literal(Literal::Integer(val))),
+            Token::Number(val) => Some(Expr::Literal(Literal::Number(val))),
             _ => None,
         }
     }
