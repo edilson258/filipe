@@ -1,3 +1,6 @@
+use crate::evaluator::environment::Environment;
+use crate::evaluator::flstdlib::builtins;
+use crate::evaluator::object::Object;
 use crate::evaluator::Evaluator;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
@@ -22,12 +25,21 @@ fn eval_repl_line(line: String) {
         return;
     };
 
-    let mut evaltr = Evaluator::new();
+    let env = Environment::from(builtins(), None);
+    let mut evaltr = Evaluator::new(env);
     let evaluated = evaltr.eval(program);
+
     if evaluated.is_none() {
         return;
     }
-    println!("{}", evaluated.unwrap());
+
+    match evaluated.unwrap() {
+        Object::Number(val) => println!("{val}"),
+        Object::String(val) => println!("{val}"),
+        Object::Error(msg) => println!("{msg}"),
+        Object::Builtin(_, _) => println!("[Builtin Function]"),
+        Object::Null => {}
+    }
 }
 
 pub fn repl() {

@@ -1,1 +1,2 @@
-print(10)
+print("Hello, Filipe!");
+print("1 + 10 * 5 / 2 = ", 1 + 10 * 5 / 2);

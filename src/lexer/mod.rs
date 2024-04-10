@@ -61,10 +61,6 @@ impl<'a> Lexer<'a> {
             '*' => Some(Token::Asterisk),
             '/' => Some(Token::Slash),
             ';' => Some(Token::Semicolon),
-            '\n' => {
-                self.read_char();
-                Some(self.next_token())
-            }
             '"' => Some(self.read_string()),
             _ => None,
         };
@@ -104,7 +100,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn skip_whitespace(&mut self) {
-        self.chop_while(|x| x == ' ');
+        self.chop_while(|x| x.is_whitespace());
     }
 
     fn chop_while<P>(&mut self, mut predicate: P) -> String

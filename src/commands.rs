@@ -1,5 +1,7 @@
 use std::process::exit;
 
+use crate::evaluator::environment::Environment;
+use crate::evaluator::flstdlib::builtins;
 use crate::evaluator::Evaluator;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
@@ -23,10 +25,7 @@ pub fn run(path: &str) {
         exit(1);
     };
 
-    let mut evaltr = Evaluator::new();
-    let evaluated = evaltr.eval(program);
-    if evaluated.is_none() {
-        return;
-    }
-    println!("{}", evaluated.unwrap());
+    let env = Environment::from(builtins(), None);
+    let mut evaltr = Evaluator::new(env);
+    evaltr.eval(program);
 }
