@@ -30,8 +30,7 @@ impl Evaluator {
     fn eval_expr(&mut self, expr: Expr) -> Option<Object> {
         match expr {
             Expr::Literal(literal) => Some(self.eval_literal_expr(literal)),
-            Expr::Call { func, args } => None,
-            Expr::Identifier(identifier) => None,
+            Expr::Identifier(_) => None,
             Expr::Infix(lhs, infix, rhs) => {
                 let lhs = self.eval_expr(*lhs);
                 let rhs = self.eval_expr(*rhs);
@@ -40,6 +39,7 @@ impl Evaluator {
                 }
                 return None;
             },
+            _ => None
         }
     }
 
