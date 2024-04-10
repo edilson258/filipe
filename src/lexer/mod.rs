@@ -61,6 +61,10 @@ impl<'a> Lexer<'a> {
             '*' => Some(Token::Asterisk),
             '/' => Some(Token::Slash),
             ';' => Some(Token::Semicolon),
+            '\n' => {
+                self.read_char();
+                Some(self.next_token())
+            }
             '"' => Some(self.read_string()),
             _ => None,
         };
