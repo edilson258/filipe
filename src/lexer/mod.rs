@@ -1,4 +1,4 @@
-use  crate::token::Token;
+use crate::token::Token;
 
 const NULL_CHAR: char = '\0';
 
@@ -55,10 +55,12 @@ impl<'a> Lexer<'a> {
         let token = match self.curr_char {
             '(' => Some(Token::Lparen),
             ')' => Some(Token::Rparen),
+            ',' => Some(Token::Comma),
             '+' => Some(Token::Plus),
             '-' => Some(Token::Minus),
-            '*' => Some(Token::Mult),
-            '/' => Some(Token::Div),
+            '*' => Some(Token::Asterisk),
+            '/' => Some(Token::Slash),
+            ';' => Some(Token::Semicolon),
             '"' => Some(self.read_string()),
             _ => None,
         };

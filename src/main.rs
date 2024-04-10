@@ -1,23 +1,21 @@
+mod ast;
 mod lexer;
 mod token;
+mod parser;
 
+use parser::Parser;
 use lexer::Lexer;
-use token::Token;
 
 fn main() {
-    let input = "print(\"Hello, World\")"
-        .to_string()
-        .chars()
-        .collect::<Vec<char>>();
+    let input = "3 * 5 + sum(4, 7)".to_string().chars().collect::<Vec<char>>();
 
     let mut l = Lexer::new(&input);
-
-    loop {
-        let token = l.next_token();
-        if let Token::Eof = token {
-            println!("{:#?}", token);
-            break;
+    let mut p = Parser::new(&mut l);
+    let program = p.parse();
+    if p.get_errors().len() > 0 {
+        for e in p.get_errors() {
+            println!("{}", e);
         }
-        println!("{:#?}", token);
     }
+    println!("{:#?}, ", program);
 }
