@@ -14,11 +14,13 @@ pub enum Token {
     Minus,
     Asterisk,
     Slash,
+    Equal,
 
     String(String),
     Number(f64),
 
     Identifier(String),
+    Let,
 }
 
 impl fmt::Display for Token {
@@ -37,6 +39,8 @@ impl fmt::Display for Token {
             Self::String(val) => write!(f, "{}", val),
             Self::Number(val) => write!(f, "{}", val),
             Self::Identifier(name) => write!(f, "{}", name),
+            Self::Let => write!(f, "let"),
+            Self::Equal => write!(f, "="),
         }
     }
 }

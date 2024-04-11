@@ -17,11 +17,13 @@ pub enum Expr {
     Call { func: Box<Expr>, args: Vec<Expr> },
     Identifier(Identifier),
     Infix(Box<Expr>, Infix, Box<Expr>),
+    Assign(Identifier, Box<Expr>),
 }
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
     Expr(Expr),
+    Let(Identifier, Option<Expr>),
 }
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
@@ -30,6 +32,7 @@ pub enum Precedence {
     Sum,         // +
     Product,     // *
     Call,        // myFunction(x)
+    Assign,      // foo = "bar"
 }
 
 #[derive(Debug, Clone)]

@@ -45,4 +45,14 @@ impl Environment {
             None => None,
         };
     }
+
+    pub fn is_declared(&self, name: &str) -> bool {
+        if self.store.contains_key(name) {
+            return true;
+        }
+        return match &self.parent {
+            Some(parent) => parent.is_declared(name),
+            None => false
+        };
+    }
 }

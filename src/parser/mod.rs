@@ -6,13 +6,15 @@ use crate::token::Token;
 
 #[derive(Clone)]
 pub enum ParseErrorKind {
+    Unexpected,
     SytaxError,
 }
 
 impl fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            ParseErrorKind::SytaxError => write!(f, "Unexpected Token"),
+            ParseErrorKind::Unexpected => write!(f, "[Unexpected Token]"),
+            ParseErrorKind::SytaxError => write!(f, "[Sytax Error]"),
         }
     }
 }
@@ -64,7 +66,7 @@ impl<'a> Parser<'a> {
         while !self.current_token_is(&Token::Eof) {
             match self.parse_stmt() {
                 Some(stmt) => program.push(stmt),
-                None => {}
+                None => break
             }
             self.bump();
         }
@@ -74,7 +76,56 @@ impl<'a> Parser<'a> {
 
     fn parse_stmt(&mut self) -> Option<Stmt> {
         match self.curr_token {
+            Token::Let => self.parse_let_stmt(),
             _ => self.parse_expr_stmt(),
+        }
+    }
+
+    fn parse_let_stmt(&mut self) -> Option<Stmt> {
+        match &self.next_token {
+            Token::Identifier(_) => self.bump(),
+            _ => {
+                self.errors.push(ParseError {
+                    kind: ParseErrorKind::SytaxError,
+                    msg: format!("'let' statment must be follwed by identifier"),
+                });
+                return None;
+            }
+        }
+
+        let name = match self.parse_identifier() {
+            Some(name) => name,
+            None => {
+                return None;
+            }
+        };
+
+        if self.next_token_is(&Token::Semicolon) || self.next_token_is(&Token::Eof) {
+            self.bump();
+            return Some(Stmt::Let(name, None));
+        }
+
+        if !self.expect_next_token(&Token::Equal) {
+            return None;
+        }
+        self.bump();
+
+        let expr = match self.parse_expr(Precedence::Lowest) {
+            Some(expr) => expr,
+            None => return None,
+        };
+
+        if self.next_token_is(&Token::Semicolon) {
+            self.bump();
+        }
+
+        Some(Stmt::Let(name, Some(expr)))
+    }
+
+    fn parse_identifier(&mut self) -> Option<Identifier> {
+        match &self.curr_token {
+            Token::Identifier(name) => Some(Identifier(name.clone())),
+            _ => None,
         }
     }
 
@@ -118,11 +169,37 @@ impl<'a> Parser<'a> {
                     self.bump();
                     left = self.parse_call_expr(left.unwrap());
                 }
+                Token::Equal => {
+                    self.bump();
+                    left = self.parse_assign_expr(left.unwrap());
+                }
                 _ => return left,
             }
         }
 
         left
+    }
+
+    fn parse_assign_expr(&mut self, left: Expr) -> Option<Expr> {
+        let identifier = match left {
+            Expr::Identifier(identifier) => identifier,
+            _ => {
+                self.errors.push(ParseError {
+                    kind: ParseErrorKind::Unexpected,
+                    msg: "Left side of assignment must an identifier".to_string(),
+                });
+                return None;
+            }
+        };
+
+        self.bump();
+
+        let expr = match self.parse_expr(Precedence::Lowest) {
+            Some(expr) => expr,
+            None => return None,
+        };
+
+        Some(Expr::Assign(identifier, Box::new(expr)))
     }
 
     fn parse_infix_expr(&mut self, left: Expr) -> Option<Expr> {
@@ -188,10 +265,10 @@ impl<'a> Parser<'a> {
         Some(list)
     }
 
-    fn parse_identifier_expr(&self) -> Option<Expr> {
-        match self.curr_token.clone() {
-            Token::Identifier(name) => Some(Expr::Identifier(Identifier(name))),
-            _ => None,
+    fn parse_identifier_expr(&mut self) -> Option<Expr> {
+        match self.parse_identifier() {
+            Some(identifier) => Some(Expr::Identifier(identifier)),
+            None => None,
         }
     }
 
@@ -214,6 +291,7 @@ impl<'a> Parser<'a> {
             Token::Plus | Token::Minus => Precedence::Sum,
             Token::Asterisk | Token::Slash => Precedence::Product,
             Token::Lparen => Precedence::Call,
+            Token::Equal => Precedence::Assign,
             _ => Precedence::Lowest,
         }
     }
@@ -248,7 +326,7 @@ impl<'a> Parser<'a> {
 
     fn unexpected_token_error(&mut self, token: &Token) {
         self.errors.push(ParseError {
-            kind: ParseErrorKind::SytaxError,
+            kind: ParseErrorKind::Unexpected,
             msg: format!("{}", token),
         })
     }

@@ -7,7 +7,7 @@ use crate::parser::Parser;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 
-fn eval_repl_line(line: String) {
+fn eval_repl_line(line: String, env: &mut Environment) {
     if line == String::from(".help") {
         println!("We only support arthimetics for now");
         return;
@@ -25,7 +25,6 @@ fn eval_repl_line(line: String) {
         return;
     };
 
-    let env = Environment::from(builtins(), None);
     let mut evaltr = Evaluator::new(env);
     let evaluated = evaltr.eval(program);
 
@@ -36,9 +35,9 @@ fn eval_repl_line(line: String) {
     match evaluated.unwrap() {
         Object::Number(val) => println!("{val}"),
         Object::String(val) => println!("{val}"),
-        Object::Error(msg) => println!("{msg}"),
-        Object::Builtin(_, _) => println!("[Builtin Function]"),
-        Object::Null => {}
+        Object::Builtin(_) => println!("[Builtin Function]"),
+        Object::Null => println!("null"),
+        _ => {}
     }
 }
 
@@ -47,12 +46,14 @@ pub fn repl() {
     println!("Type \".help\" for more information.");
 
     let mut rl = DefaultEditor::new().unwrap();
+    let mut env = Environment::from(builtins(), None);
+
     loop {
         let readline = rl.readline(">> ");
         match readline {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
-                eval_repl_line(line);
+                eval_repl_line(line, &mut env);
             }
             Err(ReadlineError::Interrupted) => {
                 println!("Exiting...");

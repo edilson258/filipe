@@ -25,7 +25,7 @@ pub fn run(path: &str) {
         exit(1);
     };
 
-    let env = Environment::from(builtins(), None);
-    let mut evaltr = Evaluator::new(env);
+    let mut env = Environment::from(builtins(), None);
+    let mut evaltr = Evaluator::new(&mut env);
     evaltr.eval(program);
 }

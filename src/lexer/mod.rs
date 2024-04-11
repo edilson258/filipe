@@ -61,6 +61,7 @@ impl<'a> Lexer<'a> {
             '*' => Some(Token::Asterisk),
             '/' => Some(Token::Slash),
             ';' => Some(Token::Semicolon),
+            '=' => Some(Token::Equal),
             '"' => Some(self.read_string()),
             _ => None,
         };
@@ -85,7 +86,11 @@ impl<'a> Lexer<'a> {
 
     fn read_identifier(&mut self) -> Token {
         let literal = self.chop_while(|x| x.is_alphanumeric());
-        return Token::Identifier(literal);
+        // look for keywords
+        match literal.as_str() {
+            "let" => Token::Let,
+            _ => Token::Identifier(literal),
+        }
     }
 
     fn read_string(&mut self) -> Token {
