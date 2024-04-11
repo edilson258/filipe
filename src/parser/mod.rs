@@ -66,7 +66,7 @@ impl<'a> Parser<'a> {
         while !self.current_token_is(&Token::Eof) {
             match self.parse_stmt() {
                 Some(stmt) => program.push(stmt),
-                None => break
+                None => {},
             }
             self.bump();
         }
@@ -77,6 +77,8 @@ impl<'a> Parser<'a> {
     fn parse_stmt(&mut self) -> Option<Stmt> {
         match self.curr_token {
             Token::Let => self.parse_let_stmt(),
+            Token::Func => self.parse_func_stmt(),
+            Token::Return => self.parse_return_stmt(),
             _ => self.parse_expr_stmt(),
         }
     }
@@ -120,6 +122,111 @@ impl<'a> Parser<'a> {
         }
 
         Some(Stmt::Let(name, Some(expr)))
+    }
+
+    fn parse_func_stmt(&mut self) -> Option<Stmt> {
+        match self.next_token {
+            Token::Identifier(_) => self.bump(),
+            _ => {
+                self.errors.push(ParseError {
+                    kind: ParseErrorKind::SytaxError,
+                    msg: format!("function's name not provided"),
+                });
+                return None;
+            }
+        }
+
+        let fn_ident = match self.parse_identifier() {
+            Some(ident) => ident,
+            None => return None,
+        };
+
+        if !self.expect_next_token(&Token::Lparen) {
+            return None;
+        }
+
+        let fn_params = match self.parse_func_params() {
+            Some(params) => params,
+            None => return None,
+        };
+
+        if !self.expect_next_token(&Token::Lbrace) {
+            return None;
+        }
+
+        let body = match self.parse_block_stmt() {
+            Some(block) => block,
+            None => return None
+        };
+
+        if self.next_token_is(&Token::Semicolon) {
+            self.bump();
+        }
+
+        Some(Stmt::Func(fn_ident, fn_params, body))
+    }
+
+    fn parse_func_params(&mut self) -> Option<Vec<Identifier>> {
+        let mut params: Vec<Identifier> = vec![];
+
+        if self.next_token_is(&Token::Rparen) {
+            self.bump();
+            return Some(params);
+        }
+
+        self.bump();
+        match self.parse_identifier() {
+            Some(ident) => params.push(ident),
+            _ => return None
+        }
+
+        while self.next_token_is(&Token::Comma) {
+            self.bump();
+            self.bump();
+
+            match self.parse_identifier() {
+                Some(ident) => params.push(ident),
+                _ => return None
+            };
+        }
+
+        if !self.expect_next_token(&Token::Rparen) {
+            return None;
+        }
+
+        Some(params)
+    }
+
+    fn parse_block_stmt(&mut self) -> Option<Vec<Stmt>> {
+        self.bump();
+        let mut body: Vec<Stmt> = vec![];
+        while !self.current_token_is(&Token::Rbrace) && !self.current_token_is(&Token::Eof) {
+            match self.parse_stmt() {
+                Some(stmt) => body.push(stmt),
+                _ => return None
+            }
+            self.bump();
+        }
+        Some(body)
+    }
+
+    fn parse_return_stmt(&mut self) -> Option<Stmt> {
+        self.bump();
+
+        if self.current_token_is(&Token::Semicolon) {
+            return Some(Stmt::Return(None));
+        }
+
+        let expr = match self.parse_expr(Precedence::Lowest) {
+            Some(expr) => expr,
+            None => return None,
+        };
+
+        if self.next_token_is(&Token::Semicolon) {
+            self.bump();
+        }
+
+        Some(Stmt::Return(Some(expr)))
     }
 
     fn parse_identifier(&mut self) -> Option<Identifier> {

@@ -1,7 +1,8 @@
 use super::object::Object;
 use std::collections::HashMap;
 
-pub struct Environment {
+#[derive(Debug, Clone)]
+pub struct Environment{
     store: HashMap<String, Object>,
     parent: Option<Box<Environment>>,
 }

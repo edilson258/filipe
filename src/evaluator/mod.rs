@@ -65,6 +65,17 @@ impl<'a> Evaluator<'a> {
     fn eval_stmt(&mut self, stmt: Stmt) -> Option<Object> {
         match stmt {
             Stmt::Let(name, expr) => self.eval_let_stmt(name, expr),
+            Stmt::Func(identifier, params, body) => {
+                let Identifier(name) = identifier;
+                self.env.set(name, Object::Func(params, body));
+                Some(Object::Null)
+            }
+            Stmt::Return(expr) => {
+                if expr.is_none() {
+                    return Some(Object::Null);
+                }
+                self.eval_expr(expr.unwrap())
+            }
             Stmt::Expr(expr) => self.eval_expr(expr),
         }
     }
@@ -122,18 +133,60 @@ impl<'a> Evaluator<'a> {
 
         let fn_name = self.expr_to_identfier_name(&func);
 
-        match self.eval_expr(func) {
+        let (params, body) = match self.eval_expr(func) {
             Some(Object::Builtin(builtin_fn)) => {
-                Some(builtin_fn(args))
+                return Some(builtin_fn(args));
             }
+            Some(Object::Func(params, body)) => (params, body),
             _ => {
                 self.set_error(
                     RuntimeErrorKind::TypeError,
-                    format!("{:?} is not callable", fn_name),
+                    format!("{} is not callable", fn_name.unwrap()),
                 );
                 return None;
             }
+        };
+
+        if params.len() != args.len() {
+            self.set_error(
+                RuntimeErrorKind::TypeError,
+                format!(
+                    "'{}' expecteds {} args but provided {}",
+                    fn_name.unwrap(),
+                    params.len(),
+                    args.len()
+                ),
+            );
+            return None;
         }
+
+        let global_scope = self.env.clone();
+        let mut fn_scope = Environment::empty(Some(self.env.clone()));
+
+        let list = params.iter().zip(args);
+        for (_, (ident, o)) in list.enumerate() {
+            let Identifier(name) = ident;
+            fn_scope.set(name.clone(), o);
+        }
+
+        *self.env = fn_scope;
+        let ret_val = self.eval_block_stmt(body);
+        *self.env = global_scope;
+
+        ret_val
+    }
+
+    fn eval_block_stmt(&mut self, block: BlockStmt) -> Option<Object> {
+        let mut res = None;
+
+        for stmt in block {
+            match self.eval_stmt(stmt) {
+                Some(Object::RetVal(val)) => return Some(Object::RetVal(val)),
+                object => res = object,
+            }
+        }
+        
+        res
     }
 
     fn eval_infix_expr(&mut self, lhs: Expr, infix: Infix, rhs: Expr) -> Option<Object> {

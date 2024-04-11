@@ -1,8 +1,1 @@
-let name;
-let age  = 22;
-print("Hello, Filipe!");
-print("1 + 10 * 5 / 2 = ", 1 + 10 * 5 / 2);
-print(name);
-name = "Edilon";
-print(name);
-print(age);
+print("Hello, World!");

@@ -55,6 +55,8 @@ impl<'a> Lexer<'a> {
         let token = match self.curr_char {
             '(' => Some(Token::Lparen),
             ')' => Some(Token::Rparen),
+            '{' => Some(Token::Lbrace),
+            '}' => Some(Token::Rbrace),
             ',' => Some(Token::Comma),
             '+' => Some(Token::Plus),
             '-' => Some(Token::Minus),
@@ -89,6 +91,8 @@ impl<'a> Lexer<'a> {
         // look for keywords
         match literal.as_str() {
             "let" => Token::Let,
+            "function" => Token::Func,
+            "return" => Token::Return,
             _ => Token::Identifier(literal),
         }
     }

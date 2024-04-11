@@ -1,6 +1,7 @@
 use core::fmt;
 
 pub type Program = Vec<Stmt>;
+pub type BlockStmt = Vec<Stmt>;
 
 #[derive(Debug, Clone)]
 pub struct Identifier(pub String);
@@ -24,6 +25,8 @@ pub enum Expr {
 pub enum Stmt {
     Expr(Expr),
     Let(Identifier, Option<Expr>),
+    Func(Identifier, Vec<Identifier>, BlockStmt),
+    Return(Option<Expr>),
 }
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]

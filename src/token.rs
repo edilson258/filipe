@@ -7,6 +7,8 @@ pub enum Token {
 
     Lparen,
     Rparen,
+    Lbrace,
+    Rbrace,
     Comma,
     Semicolon,
     
@@ -21,6 +23,8 @@ pub enum Token {
 
     Identifier(String),
     Let,
+    Func,
+    Return,
 }
 
 impl fmt::Display for Token {
@@ -41,6 +45,10 @@ impl fmt::Display for Token {
             Self::Identifier(name) => write!(f, "{}", name),
             Self::Let => write!(f, "let"),
             Self::Equal => write!(f, "="),
+            Self::Func => write!(f, "[Defined Function]"),
+            Self::Lbrace => write!(f, "{{"),
+            Self::Rbrace => write!(f, "}}"),
+            Self::Return => write!(f, "return"),
         }
     }
 }

@@ -16,6 +16,8 @@ fn filipe_print(args: Vec<Object>) -> Object {
             Object::String(val) => print!("{}", val),
             Object::Null => print!("null"),
             Object::Builtin(_) => print!("[Builtin Function]"),
+            Object::Func(_, _) => print!("{}", arg),
+            Object::RetVal(val) => print!("{}", val)
         }
     }
     println!();
