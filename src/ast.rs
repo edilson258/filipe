@@ -15,7 +15,7 @@ pub enum Literal {
 #[derive(Debug, Clone)]
 pub enum Expr {
     Literal(Literal),
-    Call { func: Box<Expr>, args: Vec<Expr> },
+    Call(Box<Expr>, Vec<Expr>),
     Identifier(Identifier),
     Infix(Box<Expr>, Infix, Box<Expr>),
     Assign(Identifier, Box<Expr>),

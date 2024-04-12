@@ -1,0 +1,15 @@
+function sayHelloTo(name) {
+  print("Hello ", name);
+}
+
+sayHelloTo("Edilson");
+
+function sum(x, y) {
+  let res = x + y;
+  return res;
+}
+
+let x = 34;
+let y = 35;
+
+print("34 + 35 = ", sum(x,y));

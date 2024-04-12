@@ -9,7 +9,7 @@ pub enum Object {
     Number(f64),
     String(String),
     Builtin(BuiltInFunc),
-    Func(Vec<Identifier>, BlockStmt),
+    Func(String, Vec<Identifier>, BlockStmt),
     Null,
     RetVal(Box<Object>),
 }
@@ -17,11 +17,11 @@ pub enum Object {
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::String(val) => write!(f, "\"{}\"", val),
+            Self::String(val) => write!(f, "'{}'", val),
             Self::Number(val) => write!(f, "{}", val),
             Self::Builtin(_) => write!(f, "[Builtin Function]"),
             Self::Null => write!(f, "null"),
-            Self::Func(_, _) => write!(f, "[Defined Function]"),
+            Self::Func(name, _, _) => write!(f, "[Defined Function] '{name}'"),
             Self::RetVal(val) => write!(f, "{}", val),
         }
     }

@@ -7,14 +7,14 @@ use crate::token::Token;
 #[derive(Clone)]
 pub enum ParseErrorKind {
     Unexpected,
-    SytaxError,
+    SyntaxError,
 }
 
 impl fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             ParseErrorKind::Unexpected => write!(f, "[Unexpected Token]"),
-            ParseErrorKind::SytaxError => write!(f, "[Sytax Error]"),
+            ParseErrorKind::SyntaxError => write!(f, "[Sytax Error]"),
         }
     }
 }
@@ -62,15 +62,13 @@ impl<'a> Parser<'a> {
 
     pub fn parse(&mut self) -> Program {
         let mut program: Program = vec![];
-
         while !self.current_token_is(&Token::Eof) {
             match self.parse_stmt() {
                 Some(stmt) => program.push(stmt),
-                None => {},
+                None => {}
             }
             self.bump();
         }
-
         program
     }
 
@@ -88,39 +86,33 @@ impl<'a> Parser<'a> {
             Token::Identifier(_) => self.bump(),
             _ => {
                 self.errors.push(ParseError {
-                    kind: ParseErrorKind::SytaxError,
+                    kind: ParseErrorKind::SyntaxError,
                     msg: format!("'let' statment must be follwed by identifier"),
                 });
                 return None;
             }
         }
-
         let name = match self.parse_identifier() {
             Some(name) => name,
             None => {
                 return None;
             }
         };
-
         if self.next_token_is(&Token::Semicolon) || self.next_token_is(&Token::Eof) {
             self.bump();
             return Some(Stmt::Let(name, None));
         }
-
         if !self.expect_next_token(&Token::Equal) {
             return None;
         }
         self.bump();
-
         let expr = match self.parse_expr(Precedence::Lowest) {
             Some(expr) => expr,
             None => return None,
         };
-
         if self.next_token_is(&Token::Semicolon) {
             self.bump();
         }
-
         Some(Stmt::Let(name, Some(expr)))
     }
 
@@ -129,71 +121,59 @@ impl<'a> Parser<'a> {
             Token::Identifier(_) => self.bump(),
             _ => {
                 self.errors.push(ParseError {
-                    kind: ParseErrorKind::SytaxError,
+                    kind: ParseErrorKind::SyntaxError,
                     msg: format!("function's name not provided"),
                 });
                 return None;
             }
         }
-
         let fn_ident = match self.parse_identifier() {
             Some(ident) => ident,
             None => return None,
         };
-
         if !self.expect_next_token(&Token::Lparen) {
             return None;
         }
-
         let fn_params = match self.parse_func_params() {
             Some(params) => params,
             None => return None,
         };
-
         if !self.expect_next_token(&Token::Lbrace) {
             return None;
         }
-
         let body = match self.parse_block_stmt() {
             Some(block) => block,
-            None => return None
+            None => return None,
         };
-
         if self.next_token_is(&Token::Semicolon) {
             self.bump();
         }
-
         Some(Stmt::Func(fn_ident, fn_params, body))
     }
 
     fn parse_func_params(&mut self) -> Option<Vec<Identifier>> {
         let mut params: Vec<Identifier> = vec![];
-
         if self.next_token_is(&Token::Rparen) {
             self.bump();
             return Some(params);
         }
-
         self.bump();
         match self.parse_identifier() {
             Some(ident) => params.push(ident),
-            _ => return None
+            _ => return None,
         }
-
         while self.next_token_is(&Token::Comma) {
             self.bump();
             self.bump();
 
             match self.parse_identifier() {
                 Some(ident) => params.push(ident),
-                _ => return None
+                _ => return None,
             };
         }
-
         if !self.expect_next_token(&Token::Rparen) {
             return None;
         }
-
         Some(params)
     }
 
@@ -203,29 +183,29 @@ impl<'a> Parser<'a> {
         while !self.current_token_is(&Token::Rbrace) && !self.current_token_is(&Token::Eof) {
             match self.parse_stmt() {
                 Some(stmt) => body.push(stmt),
-                _ => return None
+                _ => return None,
             }
             self.bump();
+        }
+        if !self.current_token_is(&Token::Rbrace) {
+            self.current_token_error(&Token::Rbrace);
+            return None;
         }
         Some(body)
     }
 
     fn parse_return_stmt(&mut self) -> Option<Stmt> {
         self.bump();
-
         if self.current_token_is(&Token::Semicolon) {
             return Some(Stmt::Return(None));
         }
-
         let expr = match self.parse_expr(Precedence::Lowest) {
             Some(expr) => expr,
             None => return None,
         };
-
         if self.next_token_is(&Token::Semicolon) {
             self.bump();
         }
-
         Some(Stmt::Return(Some(expr)))
     }
 
@@ -267,6 +247,9 @@ impl<'a> Parser<'a> {
          */
 
         while !self.next_token_is(&Token::Semicolon) && precedence < self.next_token_precedence() {
+            if left.is_none() {
+                return None;
+            }
             match self.next_token {
                 Token::Plus | Token::Minus | Token::Asterisk | Token::Slash => {
                     self.bump();
@@ -283,7 +266,6 @@ impl<'a> Parser<'a> {
                 _ => return left,
             }
         }
-
         left
     }
 
@@ -298,14 +280,11 @@ impl<'a> Parser<'a> {
                 return None;
             }
         };
-
         self.bump();
-
         let expr = match self.parse_expr(Precedence::Lowest) {
             Some(expr) => expr,
             None => return None,
         };
-
         Some(Expr::Assign(identifier, Box::new(expr)))
     }
 
@@ -317,11 +296,8 @@ impl<'a> Parser<'a> {
             Token::Slash => Infix::Devide,
             _ => return None,
         };
-
         let precedence = self.current_token_precedence();
-
         self.bump();
-
         match self.parse_expr(precedence) {
             Some(expr) => Some(Expr::Infix(Box::new(left), infix, Box::new(expr))),
             None => None,
@@ -333,42 +309,31 @@ impl<'a> Parser<'a> {
             Some(exprs) => exprs,
             None => return None,
         };
-
-        return Some(Expr::Call {
-            func: Box::new(func),
-            args,
-        });
+        return Some(Expr::Call(Box::new(func), args));
     }
 
     fn parse_expr_list(&mut self, stop: Token) -> Option<Vec<Expr>> {
         let mut list: Vec<Expr> = vec![];
-
         if self.next_token_is(&stop) {
             self.bump();
             return Some(list);
         }
-
         self.bump();
-
         match self.parse_expr(Precedence::Lowest) {
             Some(expr) => list.push(expr),
             None => return None,
         }
-
         while self.next_token_is(&Token::Comma) {
             self.bump();
             self.bump();
-
             match self.parse_expr(Precedence::Lowest) {
                 Some(expr) => list.push(expr),
                 None => return None,
             }
         }
-
         if !self.expect_next_token(&Token::Rparen) {
             return None;
         }
-
         Some(list)
     }
 
@@ -440,8 +405,15 @@ impl<'a> Parser<'a> {
 
     fn next_token_error(&mut self, token: &Token) {
         self.errors.push(ParseError {
-            kind: ParseErrorKind::SytaxError,
+            kind: ParseErrorKind::SyntaxError,
             msg: format!("expected {} but found {}", token, self.next_token),
+        })
+    }
+
+    fn current_token_error(&mut self, token: &Token) {
+        self.errors.push(ParseError {
+            kind: ParseErrorKind::SyntaxError,
+            msg: format!("expected {} but found {}", token, self.curr_token),
         })
     }
 

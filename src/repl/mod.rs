@@ -34,7 +34,7 @@ fn eval_repl_line(line: String, env: &mut Environment) {
 
     match evaluated.unwrap() {
         Object::Number(val) => println!("{val}"),
-        Object::String(val) => println!("{val}"),
+        Object::String(val) => println!("\"{val}\""),
         Object::Builtin(_) => println!("[Builtin Function]"),
         Object::Null => println!("null"),
         _ => {}

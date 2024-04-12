@@ -11,12 +11,12 @@ pub fn builtins() -> Builtins {
 
 fn filipe_print(args: Vec<Object>) -> Object {
     for arg in args {
-        match arg {
+        match &arg {
             Object::Number(val) => print!("{}", val),
             Object::String(val) => print!("{}", val),
             Object::Null => print!("null"),
             Object::Builtin(_) => print!("[Builtin Function]"),
-            Object::Func(_, _) => print!("{}", arg),
+            Object::Func(_, _, _) => print!("{}", arg),
             Object::RetVal(val) => print!("{}", val)
         }
     }
