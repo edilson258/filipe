@@ -63,7 +63,30 @@ impl<'a> Lexer<'a> {
             '*' => Some(Token::Asterisk),
             '/' => Some(Token::Slash),
             ';' => Some(Token::Semicolon),
-            '=' => Some(Token::Equal),
+            '>' => {
+                if self.next_char_is('=') {
+                    self.read_char();
+                    Some(Token::GratherOrEqual)
+                } else {
+                    Some(Token::GratherThan)
+                }
+            }
+            '<' => {
+                if self.next_char_is('=') {
+                    self.read_char();
+                    Some(Token::LessOrEqual)
+                } else {
+                    Some(Token::LessThan)
+                }
+            }
+            '=' => {
+                if self.next_char_is('=') {
+                    self.read_char();
+                    Some(Token::DoubleEqual)
+                } else {
+                    Some(Token::Equal)
+                }
+            }
             '"' => Some(self.read_string()),
             _ => None,
         };
@@ -93,6 +116,9 @@ impl<'a> Lexer<'a> {
             "let" => Token::Let,
             "function" => Token::Func,
             "return" => Token::Return,
+            "true" => Token::True,
+            "false" => Token::False,
+            "null" => Token::Null,
             _ => Token::Identifier(literal),
         }
     }
@@ -129,5 +155,12 @@ impl<'a> Lexer<'a> {
 
     fn eof(&mut self) -> bool {
         self.curr_char == NULL_CHAR
+    }
+
+    fn next_char_is(&mut self, x: char) -> bool {
+        if self.read_pos >= self.input.len() {
+            return false;
+        }
+        self.input[self.read_pos] == x
     }
 }

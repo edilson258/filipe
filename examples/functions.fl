@@ -13,3 +13,6 @@ let x = 34;
 let y = 35;
 
 print("34 + 35 = ", sum(x,y));
+
+print(10 > 5);
+print(10 < 5);

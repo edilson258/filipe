@@ -1,9 +1,15 @@
-use super::object::Object;
+use super::object::{self, Object};
 use std::collections::HashMap;
+
+#[derive(Clone, Debug)]
+pub struct ObjectInfo {
+    pub is_assinable: bool,
+    pub value: Object
+}
 
 #[derive(Debug, Clone)]
 pub struct Environment{
-    store: HashMap<String, Object>,
+    store: HashMap<String, ObjectInfo>,
     parent: Option<Box<Environment>>,
 }
 
@@ -20,7 +26,7 @@ impl Environment {
         }
     }
 
-    pub fn from(store: HashMap<String, Object>, parent: Option<Environment>) -> Self {
+    pub fn from(store: HashMap<String, ObjectInfo>, parent: Option<Environment>) -> Self {
         let parent = match parent {
             Some(parent) => Some(Box::new(parent)),
             None => None,
@@ -28,15 +34,30 @@ impl Environment {
         Self { store, parent }
     }
 
-    pub fn set_parent(&mut self, parent: Environment) {
-        self.parent = Some(Box::new(parent));
+    pub fn add_entry(&mut self, name: String, value: Object, is_assinable: bool) -> bool {
+        if self.store.contains_key(&name) {
+            return false;
+        }
+        self.store.insert(name, ObjectInfo {
+            is_assinable,
+            value,
+        });
+        true
     }
 
-    pub fn set(&mut self, name: String, value: Object) {
-        self.store.insert(name, value);
+    pub fn update_entry(&mut self, name: &str, value: Object) -> bool {
+        let old_entry = match self.store.get_mut(name) {
+            Some(object_info) => object_info,
+            None => return false,
+        };
+        if !old_entry.is_assinable {
+            return false;
+        }
+        old_entry.value = value;
+        true
     }
 
-    pub fn resolve(&self, name: &str) -> Option<Object> {
+    pub fn resolve(&self, name: &str) -> Option<ObjectInfo> {
         if self.store.contains_key(name) {
             let obj = self.store.get(name).unwrap().clone();
             return Some(obj);

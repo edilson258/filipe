@@ -18,10 +18,8 @@ fn eval_repl_line(line: String, env: &mut Environment) {
     let mut p = Parser::new(&mut l);
     let program = p.parse();
 
-    if p.get_errors().len() > 0 {
-        for e in p.get_errors() {
-            println!("{}", e);
-        }
+    if p.has_error() {
+        println!("{}", p.get_error().unwrap());
         return;
     };
 
@@ -35,8 +33,10 @@ fn eval_repl_line(line: String, env: &mut Environment) {
     match evaluated.unwrap() {
         Object::Number(val) => println!("{val}"),
         Object::String(val) => println!("\"{val}\""),
-        Object::Builtin(_) => println!("[Builtin Function]"),
+        Object::BuiltinFn(_) => println!("[Builtin Function]"),
         Object::Null => println!("null"),
+        Object::Boolean(val) => println!("{val}"),
+        Object::Type(val) => println!("{val}"),
         _ => {}
     }
 }

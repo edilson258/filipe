@@ -10,6 +10,8 @@ pub struct Identifier(pub String);
 pub enum Literal {
     String(String),
     Number(f64),
+    Boolean(bool),
+    Null,
 }
 
 #[derive(Debug, Clone)]
@@ -32,10 +34,11 @@ pub enum Stmt {
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
 pub enum Precedence {
     Lowest,
-    Sum,         // +
-    Product,     // *
-    Call,        // myFunction(x)
-    Assign,      // foo = "bar"
+    Assign,     // foo = "bar"
+    Comparison, // x > 6
+    Sum,        // +
+    Product,    // *
+    Call,       // myFunction(x)
 }
 
 #[derive(Debug, Clone)]
@@ -44,6 +47,11 @@ pub enum Infix {
     Minus,
     Devide,
     Multiply,
+    Equal,
+    LessThan,
+    LessOrEqual,
+    GratherThan,
+    GratherOrEqual,
 }
 
 impl fmt::Display for Infix {
@@ -53,6 +61,11 @@ impl fmt::Display for Infix {
             Infix::Minus => write!(f, "-"),
             Infix::Devide => write!(f, "/"),
             Infix::Multiply => write!(f, "*"),
+            Infix::Equal => write!(f, "=="),
+            Infix::LessThan => write!(f, "<"),
+            Infix::LessOrEqual => write!(f, "<="),
+            Infix::GratherThan => write!(f, ">"),
+            Infix::GratherOrEqual => write!(f, ">="),
         }
     }
 }

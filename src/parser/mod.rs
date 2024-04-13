@@ -1,43 +1,15 @@
-use core::fmt;
+mod parser_error_handler;
 
-use crate::ast::{Expr, Identifier, Infix, Literal, Precedence, Program, Stmt};
+use self::parser_error_handler::*;
+use crate::ast::*;
 use crate::lexer::Lexer;
 use crate::token::Token;
-
-#[derive(Clone)]
-pub enum ParseErrorKind {
-    Unexpected,
-    SyntaxError,
-}
-
-impl fmt::Display for ParseErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            ParseErrorKind::Unexpected => write!(f, "[Unexpected Token]"),
-            ParseErrorKind::SyntaxError => write!(f, "[Sytax Error]"),
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct ParseError {
-    kind: ParseErrorKind,
-    msg: String,
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}: {}", self.kind, self.msg)
-    }
-}
-
-pub type ParseErrors = Vec<ParseError>;
 
 pub struct Parser<'a> {
     l: &'a mut Lexer<'a>,
     curr_token: Token,
     next_token: Token,
-    errors: ParseErrors,
+    error_handler: ParserErrorHandler,
 }
 
 impl<'a> Parser<'a> {
@@ -46,7 +18,7 @@ impl<'a> Parser<'a> {
             l,
             curr_token: Token::Eof,
             next_token: Token::Eof,
-            errors: vec![],
+            error_handler: ParserErrorHandler::new(),
         };
 
         p.bump();
@@ -62,7 +34,7 @@ impl<'a> Parser<'a> {
 
     pub fn parse(&mut self) -> Program {
         let mut program: Program = vec![];
-        while !self.current_token_is(&Token::Eof) {
+        while !self.current_token_is(&Token::Eof) && !self.error_handler.has_error() {
             match self.parse_stmt() {
                 Some(stmt) => program.push(stmt),
                 None => {}
@@ -82,19 +54,13 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_let_stmt(&mut self) -> Option<Stmt> {
-        match &self.next_token {
-            Token::Identifier(_) => self.bump(),
-            _ => {
-                self.errors.push(ParseError {
-                    kind: ParseErrorKind::SyntaxError,
-                    msg: format!("'let' statment must be follwed by identifier"),
-                });
-                return None;
+        let name = match self.next_token.clone() {
+            Token::Identifier(val) => {
+                self.bump();
+                Identifier(val)
             }
-        }
-        let name = match self.parse_identifier() {
-            Some(name) => name,
-            None => {
+            _ => {
+                self.error_handler.set_identifier_error(&self.next_token);
                 return None;
             }
         };
@@ -102,7 +68,7 @@ impl<'a> Parser<'a> {
             self.bump();
             return Some(Stmt::Let(name, None));
         }
-        if !self.expect_next_token(&Token::Equal) {
+        if !self.bump_expected_next(&Token::Equal) {
             return None;
         }
         self.bump();
@@ -117,28 +83,24 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_func_stmt(&mut self) -> Option<Stmt> {
-        match self.next_token {
-            Token::Identifier(_) => self.bump(),
+        let fn_ident = match self.next_token.clone() {
+            Token::Identifier(val) => {
+                self.bump();
+                Identifier(val)
+            }
             _ => {
-                self.errors.push(ParseError {
-                    kind: ParseErrorKind::SyntaxError,
-                    msg: format!("function's name not provided"),
-                });
+                self.error_handler.set_identifier_error(&self.next_token);
                 return None;
             }
-        }
-        let fn_ident = match self.parse_identifier() {
-            Some(ident) => ident,
-            None => return None,
         };
-        if !self.expect_next_token(&Token::Lparen) {
+        if !self.bump_expected_next(&Token::Lparen) {
             return None;
         }
         let fn_params = match self.parse_func_params() {
             Some(params) => params,
             None => return None,
         };
-        if !self.expect_next_token(&Token::Lbrace) {
+        if !self.bump_expected_next(&Token::Lbrace) {
             return None;
         }
         let body = match self.parse_block_stmt() {
@@ -160,7 +122,10 @@ impl<'a> Parser<'a> {
         self.bump();
         match self.parse_identifier() {
             Some(ident) => params.push(ident),
-            _ => return None,
+            _ => {
+                self.error_handler.set_identifier_error(&self.curr_token);
+                return None;
+            }
         }
         while self.next_token_is(&Token::Comma) {
             self.bump();
@@ -168,10 +133,13 @@ impl<'a> Parser<'a> {
 
             match self.parse_identifier() {
                 Some(ident) => params.push(ident),
-                _ => return None,
+                _ => {
+                    self.error_handler.set_identifier_error(&self.curr_token);
+                    return None;
+                }
             };
         }
-        if !self.expect_next_token(&Token::Rparen) {
+        if !self.bump_expected_next(&Token::Rparen) {
             return None;
         }
         Some(params)
@@ -179,19 +147,20 @@ impl<'a> Parser<'a> {
 
     fn parse_block_stmt(&mut self) -> Option<Vec<Stmt>> {
         self.bump();
-        let mut body: Vec<Stmt> = vec![];
+        let mut block: Vec<Stmt> = vec![];
         while !self.current_token_is(&Token::Rbrace) && !self.current_token_is(&Token::Eof) {
             match self.parse_stmt() {
-                Some(stmt) => body.push(stmt),
+                Some(stmt) => block.push(stmt),
                 _ => return None,
             }
             self.bump();
         }
         if !self.current_token_is(&Token::Rbrace) {
-            self.current_token_error(&Token::Rbrace);
+            self.error_handler
+                .set_expected_but_provided_error(&Token::Rbrace, &self.curr_token);
             return None;
         }
-        Some(body)
+        Some(block)
     }
 
     fn parse_return_stmt(&mut self) -> Option<Stmt> {
@@ -233,9 +202,12 @@ impl<'a> Parser<'a> {
             Token::Identifier(_) => self.parse_identifier_expr(),
             Token::String(_) => self.parse_string_expr(),
             Token::Number(_) => self.parse_number_expr(),
+            Token::True => Some(Expr::Literal(Literal::Boolean(true))),
+            Token::False => Some(Expr::Literal(Literal::Boolean(false))),
+            Token::Null => Some(Expr::Literal(Literal::Null)),
             _ => {
                 let token = self.curr_token.clone();
-                self.unexpected_token_error(&token);
+                self.error_handler.set_unexpexted_token_error(&token);
                 return None;
             }
         };
@@ -251,7 +223,15 @@ impl<'a> Parser<'a> {
                 return None;
             }
             match self.next_token {
-                Token::Plus | Token::Minus | Token::Asterisk | Token::Slash => {
+                Token::Plus
+                | Token::Minus
+                | Token::Asterisk
+                | Token::Slash
+                | Token::DoubleEqual
+                | Token::GratherThan
+                | Token::LessThan
+                | Token::GratherOrEqual
+                | Token::LessOrEqual => {
                     self.bump();
                     left = self.parse_infix_expr(left.unwrap());
                 }
@@ -273,10 +253,8 @@ impl<'a> Parser<'a> {
         let identifier = match left {
             Expr::Identifier(identifier) => identifier,
             _ => {
-                self.errors.push(ParseError {
-                    kind: ParseErrorKind::Unexpected,
-                    msg: "Left side of assignment must an identifier".to_string(),
-                });
+                self.error_handler
+                    .set_invalid_left_side_of_assignment_error(left);
                 return None;
             }
         };
@@ -294,6 +272,11 @@ impl<'a> Parser<'a> {
             Token::Minus => Infix::Minus,
             Token::Asterisk => Infix::Multiply,
             Token::Slash => Infix::Devide,
+            Token::DoubleEqual => Infix::Equal,
+            Token::LessThan => Infix::LessThan,
+            Token::LessOrEqual => Infix::LessOrEqual,
+            Token::GratherThan => Infix::GratherThan,
+            Token::GratherOrEqual => Infix::GratherOrEqual,
             _ => return None,
         };
         let precedence = self.current_token_precedence();
@@ -331,7 +314,7 @@ impl<'a> Parser<'a> {
                 None => return None,
             }
         }
-        if !self.expect_next_token(&Token::Rparen) {
+        if !self.bump_expected_next(&Token::Rparen) {
             return None;
         }
         Some(list)
@@ -364,6 +347,11 @@ impl<'a> Parser<'a> {
             Token::Asterisk | Token::Slash => Precedence::Product,
             Token::Lparen => Precedence::Call,
             Token::Equal => Precedence::Assign,
+            Token::DoubleEqual
+            | Token::LessThan
+            | Token::LessOrEqual
+            | Token::GratherThan
+            | Token::GratherOrEqual => Precedence::Comparison,
             _ => Precedence::Lowest,
         }
     }
@@ -376,12 +364,13 @@ impl<'a> Parser<'a> {
         Self::token_to_precedence(&self.next_token)
     }
 
-    fn expect_next_token(&mut self, token: &Token) -> bool {
+    fn bump_expected_next(&mut self, token: &Token) -> bool {
         if self.next_token_is(token) {
             self.bump();
             return true;
         }
-        self.next_token_error(&token);
+        self.error_handler
+            .set_expected_but_provided_error(token, &self.next_token);
         false
     }
 
@@ -390,34 +379,14 @@ impl<'a> Parser<'a> {
     }
 
     fn next_token_is(&self, token: &Token) -> bool {
-        if self.next_token == *token {
-            return true;
-        }
-        false
+        self.next_token == *token
     }
 
-    fn unexpected_token_error(&mut self, token: &Token) {
-        self.errors.push(ParseError {
-            kind: ParseErrorKind::Unexpected,
-            msg: format!("{}", token),
-        })
+    pub fn get_error(&self) -> Option<ParserError> {
+        self.error_handler.get_error()
     }
 
-    fn next_token_error(&mut self, token: &Token) {
-        self.errors.push(ParseError {
-            kind: ParseErrorKind::SyntaxError,
-            msg: format!("expected {} but found {}", token, self.next_token),
-        })
-    }
-
-    fn current_token_error(&mut self, token: &Token) {
-        self.errors.push(ParseError {
-            kind: ParseErrorKind::SyntaxError,
-            msg: format!("expected {} but found {}", token, self.curr_token),
-        })
-    }
-
-    pub fn get_errors(&self) -> ParseErrors {
-        self.errors.clone()
+    pub fn has_error(&self) -> bool {
+        self.error_handler.has_error()
     }
 }

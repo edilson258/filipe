@@ -18,19 +18,28 @@ pub enum Token {
     Slash,
     Equal,
 
+    DoubleEqual,
+    GratherThan,
+    GratherOrEqual,
+    LessThan,
+    LessOrEqual,
+
     String(String),
     Number(f64),
+    True,
+    False,
 
     Identifier(String),
     Let,
     Func,
     Return,
+    Null,
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.clone() {
-            Self::Illegal(val) => write!(f, "{}", val),
+            Self::Illegal(val) => write!(f, "[Illegal Token] {}", val),
             Self::Eof => write!(f, "EOF"),
             Self::Lparen => write!(f, "("),
             Self::Rparen => write!(f, ")"),
@@ -49,6 +58,14 @@ impl fmt::Display for Token {
             Self::Lbrace => write!(f, "{{"),
             Self::Rbrace => write!(f, "}}"),
             Self::Return => write!(f, "return"),
+            Self::True => write!(f, "true"),
+            Self::False => write!(f, "false"),
+            Self::DoubleEqual => write!(f, "=="),
+            Self::GratherThan => write!(f, ">"),
+            Self::GratherOrEqual => write!(f, ">="),
+            Self::LessThan => write!(f, "<"),
+            Self::LessOrEqual => write!(f, "<="),
+            Self::Null => write!(f, "null"),
         }
     }
 }

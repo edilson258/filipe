@@ -18,10 +18,8 @@ pub fn run(path: &str) {
     let mut p = Parser::new(&mut l);
     let program = p.parse();
 
-    if p.get_errors().len() > 0 {
-        for e in p.get_errors() {
-            println!("{}", e);
-        }
+    if p.has_error() {
+        println!("{}", p.get_error().unwrap());
         exit(1);
     };
 
