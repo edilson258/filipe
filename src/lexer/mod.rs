@@ -62,6 +62,7 @@ impl<'a> Lexer<'a> {
             '-' => Some(Token::Minus),
             '*' => Some(Token::Asterisk),
             '/' => Some(Token::Slash),
+            ':' => Some(Token::Colon),
             ';' => Some(Token::Semicolon),
             '>' => {
                 if self.next_char_is('=') {
@@ -114,11 +115,14 @@ impl<'a> Lexer<'a> {
         // look for keywords
         match literal.as_str() {
             "let" => Token::Let,
-            "function" => Token::Func,
+            "define" => Token::Func,
             "return" => Token::Return,
             "true" => Token::True,
             "false" => Token::False,
             "null" => Token::Null,
+            "string" => Token::StringType,
+            "number" => Token::NumberType,
+            "boolean" => Token::BooleanType,
             _ => Token::Identifier(literal),
         }
     }

@@ -1,14 +1,8 @@
-use super::object::{self, Object};
+use super::object::{Object, ObjectInfo, Type};
 use std::collections::HashMap;
 
-#[derive(Clone, Debug)]
-pub struct ObjectInfo {
-    pub is_assinable: bool,
-    pub value: Object
-}
-
 #[derive(Debug, Clone)]
-pub struct Environment{
+pub struct Environment {
     store: HashMap<String, ObjectInfo>,
     parent: Option<Box<Environment>>,
 }
@@ -34,14 +28,24 @@ impl Environment {
         Self { store, parent }
     }
 
-    pub fn add_entry(&mut self, name: String, value: Object, is_assinable: bool) -> bool {
+    pub fn add_entry(
+        &mut self,
+        name: String,
+        value: Object,
+        type_: Type,
+        is_assinable: bool,
+    ) -> bool {
         if self.store.contains_key(&name) {
             return false;
         }
-        self.store.insert(name, ObjectInfo {
-            is_assinable,
-            value,
-        });
+        self.store.insert(
+            name,
+            ObjectInfo {
+                is_assinable,
+                type_,
+                value,
+            },
+        );
         true
     }
 
@@ -74,7 +78,14 @@ impl Environment {
         }
         return match &self.parent {
             Some(parent) => parent.is_declared(name),
-            None => false
+            None => false,
         };
+    }
+
+    pub fn get_typeof(&mut self, name: &str) -> Option<Type> {
+        if !self.is_declared(name) {
+            return None;
+        }
+        Some(self.resolve(name).unwrap().type_.clone())
     }
 }

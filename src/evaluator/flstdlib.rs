@@ -1,5 +1,4 @@
-use super::environment::ObjectInfo;
-use super::object::{object_to_type, BuiltInFuncRetVal, Object, Type};
+use super::object::{BuiltInFuncReturnValue, Object, ObjectInfo, Type};
 use super::{RuntimeError, RuntimeErrorKind};
 use std::collections::HashMap;
 
@@ -10,7 +9,8 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
         "print".to_string(),
         ObjectInfo {
             is_assinable: false,
-            value: Object::BuiltinFn(filipe_print),
+            type_: Type::Function,
+            value: Object::BuiltInFunction(filipe_print),
         },
     );
 
@@ -18,7 +18,8 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
         "len".to_string(),
         ObjectInfo {
             is_assinable: false,
-            value: Object::BuiltinFn(filipe_len),
+            type_: Type::Function,
+            value: Object::BuiltInFunction(filipe_len),
         },
     );
 
@@ -26,7 +27,8 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
         "typeof".to_string(),
         ObjectInfo {
             is_assinable: false,
-            value: Object::BuiltinFn(filipe_typeof),
+            type_: Type::Function,
+            value: Object::BuiltInFunction(filipe_typeof),
         },
     );
 
@@ -34,6 +36,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
         "true".to_string(),
         ObjectInfo {
             is_assinable: false,
+            type_: Type::Boolean,
             value: Object::Boolean(true),
         },
     );
@@ -42,6 +45,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
         "false".to_string(),
         ObjectInfo {
             is_assinable: false,
+            type_: Type::Boolean,
             value: Object::Boolean(false),
         },
     );
@@ -50,6 +54,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
         "null".to_string(),
         ObjectInfo {
             is_assinable: false,
+            type_: Type::Null,
             value: Object::Null,
         },
     );
@@ -57,47 +62,52 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list
 }
 
-fn filipe_print(args: Vec<Object>) -> BuiltInFuncRetVal {
+fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     for arg in args {
-        match &arg {
+        match &arg.value {
             Object::Number(val) => print!("{}", val),
             Object::String(val) => print!("{}", val),
             Object::Null => print!("null"),
-            Object::BuiltinFn(_) => print!("[Builtin Function]"),
-            Object::Func(_, _, _) => print!("{}", arg),
+            Object::BuiltInFunction(_) => print!("[Builtin Function]"),
+            Object::UserDefinedFunction {
+                name,
+                params: _,
+                body: _,
+                return_type: _,
+            } => print!("{}", name),
             Object::RetVal(val) => print!("{}", val),
             Object::Boolean(val) => print!("{}", val),
             Object::Type(val) => print!("{}", val),
         }
     }
     println!();
-    BuiltInFuncRetVal::Object(Object::Null)
+    BuiltInFuncReturnValue::Object(Object::Null)
 }
 
-fn filipe_len(args: Vec<Object>) -> BuiltInFuncRetVal {
+fn filipe_len(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     if args.len() != 1 {
-        return BuiltInFuncRetVal::Error(RuntimeError {
+        return BuiltInFuncReturnValue::Error(RuntimeError {
             kind: RuntimeErrorKind::TypeError,
             msg: format!("'len' expects 1 arg but {} were provided", args.len()),
         });
     }
 
-    match args[0].clone() {
-        Object::String(val) => BuiltInFuncRetVal::Object(Object::Number(val.len() as f64)),
-        _ => BuiltInFuncRetVal::Error(RuntimeError {
+    match args[0].value.clone() {
+        Object::String(val) => BuiltInFuncReturnValue::Object(Object::Number(val.len() as f64)),
+        _ => BuiltInFuncReturnValue::Error(RuntimeError {
             kind: RuntimeErrorKind::TypeError,
             msg: format!("'len' only accepts iterable types"),
         }),
     }
 }
 
-fn filipe_typeof(args: Vec<Object>) -> BuiltInFuncRetVal {
+fn filipe_typeof(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     if args.len() != 1 {
-        return BuiltInFuncRetVal::Error(RuntimeError {
+        return BuiltInFuncReturnValue::Error(RuntimeError {
             kind: RuntimeErrorKind::TypeError,
             msg: format!("'typeof' expects 1 arg but {} were provided", args.len()),
         });
     }
 
-    BuiltInFuncRetVal::Object(Object::Type(object_to_type(&args[0])))
+    BuiltInFuncReturnValue::Object(Object::Type(args[0].type_.clone()))
 }

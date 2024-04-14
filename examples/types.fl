@@ -1,0 +1,15 @@
+let name: string;
+let text = "Hello, World";
+let fileExt: string = ".txt";
+
+let foo: number = 69;
+let bar = 420;
+
+print("name has type: ", typeof(name));
+print("text has type: ", typeof(text));
+print("fileExt has type: ", typeof(fileExt));
+
+print("foo has type ", typeof(foo));
+print("bar has type ", typeof(bar));
+print("true has type ", typeof(true));
+print("print has type ", typeof(print));

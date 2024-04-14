@@ -1,43 +1,19 @@
 pub mod environment;
+mod eval_call;
+mod eval_let;
 pub mod flstdlib;
 pub mod object;
-
-use core::fmt;
+mod runtime_error;
 
 use crate::ast::*;
 use environment::Environment;
+use eval_call::eval_call_expr;
+use eval_let::eval_let_stmt;
 use object::Object;
+use object::{object_to_type, Type};
+use runtime_error::{RuntimeError, RuntimeErrorKind};
 
-use self::object::{BuiltInFuncRetVal, object_to_type};
-
-#[derive(Clone)]
-enum RuntimeErrorKind {
-    NameError,
-    InvalidOp,
-    TypeError,
-}
-
-impl fmt::Display for RuntimeErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::NameError => write!(f, "[Name error]"),
-            Self::InvalidOp => write!(f, "[Invalid Operation]"),
-            Self::TypeError => write!(f, "[Type Error]"),
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct RuntimeError {
-    kind: RuntimeErrorKind,
-    msg: String,
-}
-
-impl fmt::Display for RuntimeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.kind, self.msg)
-    }
-}
+use self::object::{FunctionParam, FunctionParams};
 
 pub struct Evaluator<'a> {
     env: &'a mut Environment,
@@ -64,56 +40,64 @@ impl<'a> Evaluator<'a> {
 
     fn eval_stmt(&mut self, stmt: Stmt) -> Option<Object> {
         match stmt {
-            Stmt::Let(name, expr) => self.eval_let_stmt(name, expr),
-            Stmt::Func(identifier, params, body) => self.eval_func(identifier, params, body),
+            Stmt::Let(name, var_type, expr) => {
+                eval_let_stmt(self, name, var_type, expr);
+                None
+            }
+            Stmt::Func(identifier, params, body, ret_type) => {
+                self.eval_func(identifier, params, body, ret_type);
+                None
+            }
             Stmt::Return(expr) => self.eval_return(expr),
             Stmt::Expr(expr) => self.eval_expr(expr),
         }
     }
 
-    fn eval_let_stmt(&mut self, name: Identifier, expr: Option<Expr>) -> Option<Object> {
-        let Identifier(name) = name;
-        if expr.is_none() {
-            if !self.env.add_entry(name.clone(), Object::Null, true) {
-                self.set_error(
-                    RuntimeErrorKind::NameError,
-                    format!("'{}' is already declared", name),
-                );
-            }
-            return None;
+    fn eval_expr(&mut self, expr: Expr) -> Option<Object> {
+        match expr {
+            Expr::Literal(literal) => Some(self.eval_literal_expr(literal)),
+            Expr::Identifier(identifier) => self.resolve_identfier(identifier),
+            Expr::Call(func, args) => eval_call_expr(self, *func, args),
+            Expr::Infix(lhs, infix, rhs) => self.eval_infix_expr(*lhs, infix, *rhs),
+            Expr::Assign(identifier, expr) => self.eval_assign_expr(identifier, *expr),
         }
-        let value = match self.eval_expr(expr.unwrap()) {
-            Some(obj) => obj,
-            _ => return None,
-        };
-
-        if !self.env.add_entry(name.clone(), value, true) {
-            self.set_error(
-                RuntimeErrorKind::NameError,
-                format!("'{}' is already declared", name),
-            );
-        }
-        return None;
     }
 
     fn eval_func(
         &mut self,
         identifier: Identifier,
-        params: Vec<Identifier>,
+        params: Vec<(Identifier, ExprType)>,
         body: BlockStmt,
-    ) -> Option<Object> {
+        ret_type: ExprType,
+    ) {
         let Identifier(name) = identifier;
-        if !self.env.add_entry(
-            name.clone(),
-            Object::Func(name.clone(), params, body),
-            false,
-        ) {
+        let params = params
+            .iter()
+            .map(|param| {
+                let Identifier(param_name) = param.0.clone();
+                let param_type = self.expr_type_to_object_type(param.1.clone());
+                FunctionParam {
+                    name: param_name,
+                    type_: param_type,
+                }
+            })
+            .collect::<FunctionParams>();
+        let return_type = self.expr_type_to_object_type(ret_type);
+        let function_object = Object::UserDefinedFunction {
+            name: name.clone(),
+            params,
+            body,
+            return_type,
+        };
+        if !self
+            .env
+            .add_entry(name.clone(), function_object, Type::Function, false)
+        {
             self.set_error(
                 RuntimeErrorKind::NameError,
                 format!("'{}' is already declared", name),
             );
         }
-        Some(Object::Null)
     }
 
     fn eval_return(&mut self, expr: Option<Expr>) -> Option<Object> {
@@ -123,16 +107,6 @@ impl<'a> Evaluator<'a> {
         match self.eval_expr(expr.unwrap()) {
             Some(object) => Some(Object::RetVal(Box::new(object))),
             None => None,
-        }
-    }
-
-    fn eval_expr(&mut self, expr: Expr) -> Option<Object> {
-        match expr {
-            Expr::Literal(literal) => Some(self.eval_literal_expr(literal)),
-            Expr::Identifier(identifier) => self.resolve_identfier(identifier),
-            Expr::Call(func, args) => self.eval_call_expr(*func, args),
-            Expr::Infix(lhs, infix, rhs) => self.eval_infix_expr(*lhs, infix, *rhs),
-            Expr::Assign(identifier, expr) => self.eval_assign_expr(identifier, *expr),
         }
     }
 
@@ -156,84 +130,6 @@ impl<'a> Evaluator<'a> {
             )
         }
         None
-    }
-
-    fn eval_call_expr(&mut self, func: Expr, provided_args: Vec<Expr>) -> Option<Object> {
-        let mut args: Vec<Object> = vec![];
-        for arg in provided_args {
-            let arg = match self.eval_expr(arg) {
-                Some(object) => object,
-                None => return None,
-            };
-            args.push(arg);
-        }
-
-        let func_name = match Self::expr_to_identifier(&func) {
-            Some(identifier) => {
-                let Identifier(name) = identifier;
-                name
-            }
-            None => {
-                self.set_error(
-                    RuntimeErrorKind::TypeError,
-                    format!("invalid function name {:?}", func),
-                );
-                return None;
-            }
-        };
-
-        let func_object = match self.eval_expr(func) {
-            Some(expr) => expr,
-            None => return None,
-        };
-
-        let (name, params, body) = match func_object.clone() {
-            Object::BuiltinFn(builtin_fn) => match builtin_fn(args) {
-                BuiltInFuncRetVal::Object(object) => return Some(object),
-                BuiltInFuncRetVal::Error(err) => {
-                    self.set_error(err.kind, err.msg);
-                    return None;
-                }
-            },
-            Object::Func(name, params, body) => (name, params, body),
-            _ => {
-                self.set_error(
-                    RuntimeErrorKind::TypeError,
-                    format!("'{}' is not callable", func_name),
-                );
-                return None;
-            }
-        };
-        if params.len() != args.len() {
-            self.set_error(
-                RuntimeErrorKind::TypeError,
-                format!(
-                    "Function '{}' expecteds {} args but provided {}",
-                    name,
-                    params.len(),
-                    args.len()
-                ),
-            );
-            return None;
-        }
-        let global_scope = self.env.clone();
-        let mut fn_scope = Environment::empty(Some(self.env.clone()));
-        let list = params.iter().zip(args);
-        for (_, (ident, o)) in list.enumerate() {
-            let Identifier(name) = ident;
-            fn_scope.add_entry(name.clone(), o, true);
-        }
-        *self.env = fn_scope;
-        let ret_val = self.eval_block_stmt(body);
-        *self.env = global_scope;
-        Some(ret_val)
-    }
-
-    fn expr_to_identifier(expr: &Expr) -> Option<Identifier> {
-        match expr {
-            Expr::Identifier(ident) => Some(ident.clone()),
-            _ => None,
-        }
     }
 
     fn eval_block_stmt(&mut self, block: BlockStmt) -> Object {
@@ -260,7 +156,7 @@ impl<'a> Evaluator<'a> {
 
         let lhs = lhs.unwrap();
         let rhs = rhs.unwrap();
-        
+
         if !self.has_same_type(&lhs, &rhs) {
             self.set_error(
                 RuntimeErrorKind::TypeError,
@@ -280,27 +176,23 @@ impl<'a> Evaluator<'a> {
                     return Some(self.eval_infix_number_expr(lval, infix, rval));
                 }
                 None
-            },
+            }
             Object::String(lval) => {
                 if let Object::String(rval) = rhs {
                     return Some(self.eval_infix_string_expr(lval, infix, rval));
                 }
                 None
-            },
+            }
             Object::Boolean(lval) => {
                 if let Object::Boolean(rval) = rhs {
                     return Some(self.eval_infix_bool_expr(lval, infix, rval));
                 }
                 None
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
 
-    fn has_same_type(&self, lhs: &Object, rhs: &Object) -> bool {
-        object_to_type(lhs) == object_to_type(rhs)
-    }
-        
     fn eval_infix_string_expr(&mut self, lhs: String, infix: Infix, rhs: String) -> Object {
         match infix {
             Infix::Plus => Object::String(lhs + &rhs),
@@ -381,5 +273,55 @@ impl<'a> Evaluator<'a> {
 
     fn set_error(&mut self, kind: RuntimeErrorKind, msg: String) {
         self.error = Some(RuntimeError { kind, msg });
+    }
+
+    fn expr_type_to_object_type(&mut self, var_type: ExprType) -> Type {
+        match var_type {
+            ExprType::String => Type::String,
+            ExprType::Number => Type::Number,
+            ExprType::Boolean => Type::Boolean,
+            ExprType::Null => Type::Null,
+        }
+    }
+
+    fn expr_to_type(&mut self, expr: Expr) -> Option<Type> {
+        match expr {
+            Expr::Literal(literal) => match literal {
+                Literal::String(_) => return Some(Type::String),
+                Literal::Null => return Some(Type::Null),
+                Literal::Number(_) => return Some(Type::Number),
+                Literal::Boolean(_) => return Some(Type::Boolean),
+            },
+            Expr::Identifier(identifier) => return self.identifier_to_type(identifier),
+            _ => {
+                return None;
+            }
+        }
+    }
+
+    fn has_same_type(&self, lhs: &Object, rhs: &Object) -> bool {
+        object_to_type(lhs) == object_to_type(rhs)
+    }
+
+    fn identifier_to_type(&mut self, identifier: Identifier) -> Option<Type> {
+        let Identifier(name) = identifier;
+
+        match self.env.get_typeof(&name) {
+            Some(type_) => Some(type_),
+            None => {
+                self.set_error(
+                    RuntimeErrorKind::NameError,
+                    format!("Couldn't resolve {}'s type maybe it's not declared", &name),
+                );
+                return None;
+            }
+        }
+    }
+
+    fn expr_to_identifier(expr: &Expr) -> Option<Identifier> {
+        match expr {
+            Expr::Identifier(ident) => Some(ident.clone()),
+            _ => None,
+        }
     }
 }

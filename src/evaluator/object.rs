@@ -1,12 +1,20 @@
 use core::fmt;
 
-use super::{BlockStmt, Identifier, RuntimeError};
+use super::{BlockStmt, RuntimeError};
 
-pub enum BuiltInFuncRetVal {
+pub enum BuiltInFuncReturnValue {
     Object(Object),
     Error(RuntimeError),
 }
-type BuiltInFunc = fn(Vec<Object>) -> BuiltInFuncRetVal;
+type BuiltInFunction = fn(Vec<ObjectInfo>) -> BuiltInFuncReturnValue;
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct FunctionParam {
+    pub name: String,
+    pub type_: Type,
+}
+
+pub type FunctionParams = Vec<FunctionParam>;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Type {
@@ -20,14 +28,26 @@ pub enum Type {
 
 #[derive(Clone, Debug)]
 pub enum Object {
-    Number(f64),
-    String(String),
-    Boolean(bool),
-    BuiltinFn(BuiltInFunc),
-    Func(String, Vec<Identifier>, BlockStmt),
     Null,
-    RetVal(Box<Object>),
     Type(Type),
+    Number(f64),
+    Boolean(bool),
+    String(String),
+    RetVal(Box<Object>),
+    UserDefinedFunction {
+        name: String,
+        params: FunctionParams,
+        body: BlockStmt,
+        return_type: Type,
+    },
+    BuiltInFunction(BuiltInFunction),
+}
+
+#[derive(Clone, Debug)]
+pub struct ObjectInfo {
+    pub is_assinable: bool,
+    pub type_: Type,
+    pub value: Object,
 }
 
 pub fn object_to_type(object: &Object) -> Type {
@@ -36,8 +56,13 @@ pub fn object_to_type(object: &Object) -> Type {
         Object::String(_) => Type::String,
         Object::Number(_) => Type::Number,
         Object::Boolean(_) => Type::Boolean,
-        Object::BuiltinFn(_) => Type::Function,
-        Object::Func(_, _, _) => Type::Function,
+        Object::BuiltInFunction(_) => Type::Function,
+        Object::UserDefinedFunction {
+            name: _,
+            params: _,
+            body: _,
+            return_type: _,
+        } => Type::Function,
         Object::RetVal(val) => object_to_type(&val),
         Object::Type(_) => Type::TypeAnnot,
     }
@@ -48,9 +73,14 @@ impl fmt::Display for Object {
         match self {
             Self::String(val) => write!(f, "'{}'", val),
             Self::Number(val) => write!(f, "{}", val),
-            Self::BuiltinFn(_) => write!(f, "[Builtin Function]"),
+            Self::BuiltInFunction(_) => write!(f, "[Builtin Function]"),
             Self::Null => write!(f, "null"),
-            Self::Func(name, _, _) => write!(f, "[Defined Function] '{name}'"),
+            Self::UserDefinedFunction {
+                name,
+                params: _,
+                body: _,
+                return_type: _,
+            } => write!(f, "[User Defined Function] {name}"),
             Self::RetVal(val) => write!(f, "{}", val),
             Self::Boolean(val) => write!(f, "{}", val),
             Self::Type(val) => write!(f, "{}", val),

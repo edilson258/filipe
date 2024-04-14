@@ -33,11 +33,17 @@ fn eval_repl_line(line: String, env: &mut Environment) {
     match evaluated.unwrap() {
         Object::Number(val) => println!("{val}"),
         Object::String(val) => println!("\"{val}\""),
-        Object::BuiltinFn(_) => println!("[Builtin Function]"),
+        Object::BuiltInFunction(_) => println!("[Builtin Function]"),
         Object::Null => println!("null"),
         Object::Boolean(val) => println!("{val}"),
         Object::Type(val) => println!("{val}"),
-        _ => {}
+        Object::UserDefinedFunction {
+            name,
+            params: _,
+            body: _,
+            return_type: _,
+        } => println!("[User Defined Function] {name}"),
+        Object::RetVal(val) => println!("{}", val),
     }
 }
 

@@ -10,6 +10,7 @@ pub enum Token {
     Lbrace,
     Rbrace,
     Comma,
+    Colon,
     Semicolon,
     
     Plus,
@@ -34,6 +35,10 @@ pub enum Token {
     Func,
     Return,
     Null,
+
+    StringType,
+    BooleanType,
+    NumberType,
 }
 
 impl fmt::Display for Token {
@@ -66,6 +71,10 @@ impl fmt::Display for Token {
             Self::LessThan => write!(f, "<"),
             Self::LessOrEqual => write!(f, "<="),
             Self::Null => write!(f, "null"),
+            Self::Colon => write!(f, ":"),
+            Self::StringType => write!(f, "[Type Annotation] string"),
+            Self::NumberType => write!(f, "[Type Annotation] number"),
+            Self::BooleanType => write!(f, "[Type Annotation] boolean"),
         }
     }
 }

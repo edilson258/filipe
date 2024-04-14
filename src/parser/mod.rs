@@ -1,9 +1,13 @@
+mod func_parser;
+mod let_parser;
 mod parser_error_handler;
 
-use self::parser_error_handler::*;
 use crate::ast::*;
 use crate::lexer::Lexer;
 use crate::token::Token;
+use func_parser::parse_func_stmt;
+use let_parser::parse_let_stmt;
+use parser_error_handler::*;
 
 pub struct Parser<'a> {
     l: &'a mut Lexer<'a>,
@@ -46,103 +50,36 @@ impl<'a> Parser<'a> {
 
     fn parse_stmt(&mut self) -> Option<Stmt> {
         match self.curr_token {
-            Token::Let => self.parse_let_stmt(),
-            Token::Func => self.parse_func_stmt(),
+            Token::Let => parse_let_stmt(self),
+            Token::Func => parse_func_stmt(self),
             Token::Return => self.parse_return_stmt(),
             _ => self.parse_expr_stmt(),
         }
     }
 
-    fn parse_let_stmt(&mut self) -> Option<Stmt> {
-        let name = match self.next_token.clone() {
-            Token::Identifier(val) => {
-                self.bump();
-                Identifier(val)
-            }
+    fn token_to_type(&mut self, token: &Token) -> Option<ExprType> {
+        match token {
+            Token::StringType => Some(ExprType::String),
+            Token::NumberType => Some(ExprType::Number),
+            Token::BooleanType => Some(ExprType::Boolean),
             _ => {
-                self.error_handler.set_identifier_error(&self.next_token);
+                self.error_handler.set_not_type_annot_error(token);
                 return None;
             }
-        };
-        if self.next_token_is(&Token::Semicolon) || self.next_token_is(&Token::Eof) {
-            self.bump();
-            return Some(Stmt::Let(name, None));
         }
-        if !self.bump_expected_next(&Token::Equal) {
-            return None;
-        }
-        self.bump();
-        let expr = match self.parse_expr(Precedence::Lowest) {
-            Some(expr) => expr,
-            None => return None,
-        };
-        if self.next_token_is(&Token::Semicolon) {
-            self.bump();
-        }
-        Some(Stmt::Let(name, Some(expr)))
     }
 
-    fn parse_func_stmt(&mut self) -> Option<Stmt> {
-        let fn_ident = match self.next_token.clone() {
-            Token::Identifier(val) => {
-                self.bump();
-                Identifier(val)
-            }
+    fn parse_type_annot(&mut self) -> Option<ExprType> {
+        match self.curr_token {
+            Token::NumberType => Some(ExprType::Number),
+            Token::StringType => Some(ExprType::String),
+            Token::BooleanType => Some(ExprType::Boolean),
+            Token::Null => Some(ExprType::Null),
             _ => {
-                self.error_handler.set_identifier_error(&self.next_token);
-                return None;
-            }
-        };
-        if !self.bump_expected_next(&Token::Lparen) {
-            return None;
-        }
-        let fn_params = match self.parse_func_params() {
-            Some(params) => params,
-            None => return None,
-        };
-        if !self.bump_expected_next(&Token::Lbrace) {
-            return None;
-        }
-        let body = match self.parse_block_stmt() {
-            Some(block) => block,
-            None => return None,
-        };
-        if self.next_token_is(&Token::Semicolon) {
-            self.bump();
-        }
-        Some(Stmt::Func(fn_ident, fn_params, body))
-    }
-
-    fn parse_func_params(&mut self) -> Option<Vec<Identifier>> {
-        let mut params: Vec<Identifier> = vec![];
-        if self.next_token_is(&Token::Rparen) {
-            self.bump();
-            return Some(params);
-        }
-        self.bump();
-        match self.parse_identifier() {
-            Some(ident) => params.push(ident),
-            _ => {
-                self.error_handler.set_identifier_error(&self.curr_token);
+                self.error_handler.set_not_type_annot_error(&self.curr_token);
                 return None;
             }
         }
-        while self.next_token_is(&Token::Comma) {
-            self.bump();
-            self.bump();
-
-            match self.parse_identifier() {
-                Some(ident) => params.push(ident),
-                _ => {
-                    self.error_handler.set_identifier_error(&self.curr_token);
-                    return None;
-                }
-            };
-        }
-        if !self.bump_expected_next(&Token::Rparen) {
-            return None;
-        }
-        Some(params)
     }
 
     fn parse_block_stmt(&mut self) -> Option<Vec<Stmt>> {

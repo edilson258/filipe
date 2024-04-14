@@ -13,7 +13,7 @@ pub enum ParserErrorKind {
 impl fmt::Display for ParserErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            ParserErrorKind::SyntaxError => write!(f, "Syntax Error"),
+            ParserErrorKind::SyntaxError => write!(f, "[Syntax Error]"),
         }
     }
 }
@@ -86,7 +86,7 @@ impl ParserErrorHandler {
             Token::Func => {
                 self.error = Some(ParserError {
                     kind: ParserErrorKind::SyntaxError,
-                    msg: format!("'function' keyword cannot be used as identifier"),
+                    msg: format!("'define' keyword cannot be used as identifier"),
                 });
                 return;
             }
@@ -109,6 +109,13 @@ impl ParserErrorHandler {
         self.error = Some(ParserError {
             kind: ParserErrorKind::SyntaxError,
             msg: format!("unexpected {}", token),
+        });
+    }
+
+    pub fn set_not_type_annot_error(&mut self, token: &Token) {
+        self.error = Some(ParserError {
+            kind: ParserErrorKind::SyntaxError,
+            msg: format!("expected type annotation but provided {}", token),
         });
     }
 }

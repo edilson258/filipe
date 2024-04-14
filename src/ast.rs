@@ -4,6 +4,14 @@ pub type Program = Vec<Stmt>;
 pub type BlockStmt = Vec<Stmt>;
 
 #[derive(Debug, Clone)]
+pub enum ExprType {
+    Null,
+    String,
+    Number,
+    Boolean,
+}
+
+#[derive(Debug, Clone)]
 pub struct Identifier(pub String);
 
 #[derive(Debug, Clone)]
@@ -26,8 +34,8 @@ pub enum Expr {
 #[derive(Debug, Clone)]
 pub enum Stmt {
     Expr(Expr),
-    Let(Identifier, Option<Expr>),
-    Func(Identifier, Vec<Identifier>, BlockStmt),
+    Let(Identifier, Option<ExprType>, Option<Expr>),
+    Func(Identifier, Vec<(Identifier, ExprType)>, BlockStmt, ExprType),
     Return(Option<Expr>),
 }
 
