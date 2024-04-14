@@ -1,6 +1,6 @@
-use super::environment::Environment;
-use super::object::*;
-use super::*;
+use super::super::object::*;
+use crate::evaluator::environment::Environment;
+use crate::evaluator::{Evaluator, Expr, Identifier, RuntimeErrorKind};
 
 pub fn eval_call_expr(
     e: &mut Evaluator,
@@ -78,7 +78,9 @@ pub fn eval_call_expr(
     let global_scope = e.env.clone();
     let mut fn_scope = Environment::empty(Some(e.env.clone()));
 
-    for (_, (FunctionParam { name, type_ }, object_info)) in params.iter().zip(checked_args).enumerate() {
+    for (_, (FunctionParam { name, type_ }, object_info)) in
+        params.iter().zip(checked_args).enumerate()
+    {
         if *type_ != object_info.type_ {
             e.set_error(
                 RuntimeErrorKind::TypeError,

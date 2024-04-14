@@ -1,19 +1,17 @@
 pub mod environment;
-mod eval_call;
-mod eval_let;
+mod evaluators;
 pub mod flstdlib;
 pub mod object;
 mod runtime_error;
 
 use crate::ast::*;
 use environment::Environment;
-use eval_call::eval_call_expr;
-use eval_let::eval_let_stmt;
+use evaluators::func_call_evaluator::eval_call_expr;
+use evaluators::func_def_evaluator::eval_func_def;
+use evaluators::let_evaluator::eval_let_stmt;
 use object::Object;
 use object::{object_to_type, Type};
 use runtime_error::{RuntimeError, RuntimeErrorKind};
-
-use self::object::{FunctionParam, FunctionParams};
 
 pub struct Evaluator<'a> {
     env: &'a mut Environment,
@@ -45,7 +43,7 @@ impl<'a> Evaluator<'a> {
                 None
             }
             Stmt::Func(identifier, params, body, ret_type) => {
-                self.eval_func(identifier, params, body, ret_type);
+                eval_func_def(self, identifier, params, body, ret_type);
                 None
             }
             Stmt::Return(expr) => self.eval_return(expr),
@@ -60,43 +58,6 @@ impl<'a> Evaluator<'a> {
             Expr::Call(func, args) => eval_call_expr(self, *func, args),
             Expr::Infix(lhs, infix, rhs) => self.eval_infix_expr(*lhs, infix, *rhs),
             Expr::Assign(identifier, expr) => self.eval_assign_expr(identifier, *expr),
-        }
-    }
-
-    fn eval_func(
-        &mut self,
-        identifier: Identifier,
-        params: Vec<(Identifier, ExprType)>,
-        body: BlockStmt,
-        ret_type: ExprType,
-    ) {
-        let Identifier(name) = identifier;
-        let params = params
-            .iter()
-            .map(|param| {
-                let Identifier(param_name) = param.0.clone();
-                let param_type = self.expr_type_to_object_type(param.1.clone());
-                FunctionParam {
-                    name: param_name,
-                    type_: param_type,
-                }
-            })
-            .collect::<FunctionParams>();
-        let return_type = self.expr_type_to_object_type(ret_type);
-        let function_object = Object::UserDefinedFunction {
-            name: name.clone(),
-            params,
-            body,
-            return_type,
-        };
-        if !self
-            .env
-            .add_entry(name.clone(), function_object, Type::Function, false)
-        {
-            self.set_error(
-                RuntimeErrorKind::NameError,
-                format!("'{}' is already declared", name),
-            );
         }
     }
 

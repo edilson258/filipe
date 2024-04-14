@@ -1,6 +1,5 @@
-use super::{
-    object::{object_to_type, Object, Type},
-    Evaluator, Expr, ExprType, Identifier, RuntimeErrorKind,
+use crate::evaluator::{
+    object_to_type, Evaluator, Expr, ExprType, Identifier, Object, RuntimeErrorKind, Type,
 };
 
 pub fn eval_let_stmt(
@@ -48,10 +47,7 @@ fn eval_let_by_type_inference(e: &mut Evaluator, name: String, expr: Expr) {
 }
 
 fn add_to_env(e: &mut Evaluator, name: String, object: Object, type_: Type) {
-    if !e
-        .env
-        .add_entry(name.clone(), object, type_, true)
-    {
+    if !e.env.add_entry(name.clone(), object, type_, true) {
         e.set_error(
             RuntimeErrorKind::NameError,
             format!("'{}' is already declared", &name),
