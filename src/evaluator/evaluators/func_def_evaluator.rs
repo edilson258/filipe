@@ -1,4 +1,4 @@
-use crate::evaluator::object::{Type, Object, FunctionParam, FunctionParams};
+use crate::evaluator::object::{FunctionParam, FunctionParams, Object, Type};
 use crate::evaluator::runtime_error::RuntimeErrorKind;
 use crate::evaluator::{BlockStmt, Evaluator, ExprType, Identifier};
 

@@ -19,6 +19,11 @@ pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
         Some(params) => params,
         None => return None,
     };
+    
+    if !p.bump_expected_next(&Token::Colon) {
+        return None;
+    }
+
     p.bump();
 
     let ret_type = match p.parse_type_annot() {
