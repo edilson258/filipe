@@ -123,6 +123,8 @@ impl<'a> Lexer<'a> {
             "string" => Token::StringType,
             "number" => Token::NumberType,
             "boolean" => Token::BooleanType,
+            "if" => Token::If,
+            "else" => Token::Else,
             _ => Token::Identifier(literal),
         }
     }

@@ -37,6 +37,11 @@ pub enum Stmt {
     Let(Identifier, Option<ExprType>, Option<Expr>),
     Func(Identifier, Vec<(Identifier, ExprType)>, BlockStmt, ExprType),
     Return(Option<Expr>),
+    If {
+        condition: Expr,
+        consequence: BlockStmt,
+        alternative: Option<BlockStmt>,
+    },
 }
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]

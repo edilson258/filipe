@@ -35,6 +35,8 @@ pub enum Token {
     Func,
     Return,
     Null,
+    If,
+    Else,
 
     StringType,
     BooleanType,
@@ -75,6 +77,8 @@ impl fmt::Display for Token {
             Self::StringType => write!(f, "[Type Annotation] string"),
             Self::NumberType => write!(f, "[Type Annotation] number"),
             Self::BooleanType => write!(f, "[Type Annotation] boolean"),
+            Self::If => write!(f, "if"),
+            Self::Else => write!(f, "else"),
         }
     }
 }

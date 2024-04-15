@@ -62,6 +62,7 @@ pub fn eval_call_expr(
             return None;
         }
     };
+
     if params.len() != checked_args.len() {
         e.set_error(
             RuntimeErrorKind::TypeError,
@@ -96,8 +97,8 @@ pub fn eval_call_expr(
     }
 
     *e.env = fn_scope;
-    let ret_val = e.eval_block_stmt(body);
-    let provided_type = object_to_type(&ret_val);
+    let returned_value = e.eval_block_stmt(body).unwrap_or(Object::Null);
+    let provided_type = object_to_type(&returned_value);
 
     if provided_type != expected_ret_type {
         e.set_error(
@@ -111,5 +112,5 @@ pub fn eval_call_expr(
     }
 
     *e.env = global_scope;
-    Some(ret_val)
+    Some(returned_value)
 }

@@ -53,8 +53,46 @@ impl<'a> Parser<'a> {
             Token::Let => parse_let_stmt(self),
             Token::Func => parse_func_stmt(self),
             Token::Return => self.parse_return_stmt(),
+            Token::If => self.parse_if_stmt(),
             _ => self.parse_expr_stmt(),
         }
+    }
+
+    fn parse_if_stmt(&mut self) -> Option<Stmt> {
+        if !self.bump_expected_next(&Token::Lparen) {
+            return None;
+        }
+
+        self.bump();
+
+        let condition = match self.parse_expr(Precedence::Lowest) {
+            Some(expr) => expr,
+            None => return None,
+        };
+
+        if !self.bump_expected_next(&Token::Rparen) {
+            return None;
+        }
+        self.bump();
+
+        let consequence = match self.parse_block_stmt() {
+            Some(block) => block,
+            None => return None,
+        };
+        self.bump();
+
+        let mut alternative: Option<BlockStmt> = None;
+
+        if self.current_token_is(&Token::Else) {
+            self.bump();
+            alternative = self.parse_block_stmt();
+        }
+
+        Some(Stmt::If {
+            condition,
+            consequence,
+            alternative,
+        })
     }
 
     fn token_to_type(&mut self, token: &Token) -> Option<ExprType> {
@@ -76,7 +114,8 @@ impl<'a> Parser<'a> {
             Token::BooleanType => Some(ExprType::Boolean),
             Token::Null => Some(ExprType::Null),
             _ => {
-                self.error_handler.set_not_type_annot_error(&self.curr_token);
+                self.error_handler
+                    .set_not_type_annot_error(&self.curr_token);
                 return None;
             }
         }

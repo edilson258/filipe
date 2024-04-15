@@ -13,7 +13,6 @@ pub struct FunctionParam {
     pub name: String,
     pub type_: Type,
 }
-
 pub type FunctionParams = Vec<FunctionParam>;
 
 #[derive(PartialEq, Clone, Debug)]

@@ -4,6 +4,8 @@ pub mod flstdlib;
 pub mod object;
 mod runtime_error;
 
+use core::f64;
+
 use crate::ast::*;
 use environment::Environment;
 use evaluators::func_call_evaluator::eval_call_expr;
@@ -48,6 +50,41 @@ impl<'a> Evaluator<'a> {
             }
             Stmt::Return(expr) => self.eval_return(expr),
             Stmt::Expr(expr) => self.eval_expr(expr),
+            Stmt::If {
+                condition,
+                consequence,
+                alternative,
+            } => self.eval_if_stmt(condition, consequence, alternative),
+        }
+    }
+
+    fn eval_if_stmt(
+        &mut self,
+        condition: Expr,
+        consequence: BlockStmt,
+        alternative: Option<BlockStmt>,
+    ) -> Option<Object> {
+        let evaluated_cond = match self.eval_expr(condition) {
+            Some(object) => object,
+            None => return None,
+        };
+
+        if self.is_truthy(evaluated_cond) {
+            return self.eval_block_stmt(consequence);
+        }
+
+        if alternative.is_some() {
+            return self.eval_block_stmt(alternative.unwrap());
+        }
+
+        None
+    }
+
+    fn is_truthy(&mut self, object: Object) -> bool {
+        match object {
+            Object::Null | Object::Boolean(false) => false,
+            Object::Number(val) => val != 0.0,
+            _ => true,
         }
     }
 
@@ -93,18 +130,17 @@ impl<'a> Evaluator<'a> {
         None
     }
 
-    fn eval_block_stmt(&mut self, block: BlockStmt) -> Object {
+    fn eval_block_stmt(&mut self, block: BlockStmt) -> Option<Object> {
         let mut res = None;
+
         for stmt in block {
             match self.eval_stmt(stmt) {
-                Some(Object::RetVal(val)) => return *val,
+                Some(Object::RetVal(object)) => return Some(*object),
                 object => res = object,
             }
         }
-        match res {
-            Some(object) => object,
-            None => Object::Null,
-        }
+
+        res
     }
 
     fn eval_infix_expr(&mut self, lhs: Expr, infix: Infix, rhs: Expr) -> Option<Object> {
