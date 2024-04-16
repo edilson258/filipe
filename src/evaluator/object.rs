@@ -1,6 +1,7 @@
 use core::fmt;
 
 use super::runtime_error::RuntimeError;
+use super::type_system::Type;
 use super::BlockStmt;
 
 pub enum BuiltInFuncReturnValue {
@@ -15,16 +16,6 @@ pub struct FunctionParam {
     pub type_: Type,
 }
 pub type FunctionParams = Vec<FunctionParam>;
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum Type {
-    Null,
-    Number,
-    String,
-    Boolean,
-    Function,
-    TypeAnnot,
-}
 
 #[derive(Clone, Debug)]
 pub enum Object {
@@ -45,27 +36,9 @@ pub enum Object {
 
 #[derive(Clone, Debug)]
 pub struct ObjectInfo {
-    pub is_assinable: bool,
+    pub is_assignable: bool,
     pub type_: Type,
     pub value: Object,
-}
-
-pub fn object_to_type(object: &Object) -> Type {
-    match object {
-        Object::Null => Type::Null,
-        Object::String(_) => Type::String,
-        Object::Number(_) => Type::Number,
-        Object::Boolean(_) => Type::Boolean,
-        Object::BuiltInFunction(_) => Type::Function,
-        Object::UserDefinedFunction {
-            name: _,
-            params: _,
-            body: _,
-            return_type: _,
-        } => Type::Function,
-        Object::RetVal(val) => object_to_type(&val),
-        Object::Type(_) => Type::TypeAnnot,
-    }
 }
 
 impl fmt::Display for Object {

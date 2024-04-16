@@ -1,19 +1,20 @@
 use super::super::object::*;
 use crate::evaluator::environment::Environment;
+use crate::evaluator::type_system::{expr_to_type, object_to_type};
 use crate::evaluator::{Evaluator, Expr, Identifier};
 
 pub fn eval_call_expr(
     e: &mut Evaluator,
-    func_ident: Expr,
-    provided_args: Vec<Expr>,
+    func_ident: &Expr,
+    provided_args: &Vec<Expr>,
 ) -> Option<Object> {
     let mut checked_args: Vec<ObjectInfo> = vec![];
 
     for arg in provided_args {
-        let arg = match e.eval_expr(arg.clone()) {
+        let arg = match e.eval_expr(arg) {
             Some(object) => ObjectInfo {
-                is_assinable: true,
-                type_: e.expr_to_type(arg).unwrap_or(object_to_type(&object)),
+                is_assignable: true,
+                type_: expr_to_type(e, arg).unwrap_or(object_to_type(&object)),
                 value: object,
             },
             None => return None,
@@ -87,7 +88,7 @@ pub fn eval_call_expr(
     }
 
     *e.env = fn_scope;
-    let returned_value = e.eval_block_stmt(body).unwrap_or(Object::Null);
+    let returned_value = e.eval_block_stmt(&body).unwrap_or(Object::Null);
     let provided_type = object_to_type(&returned_value);
 
     if provided_type != expected_ret_type {

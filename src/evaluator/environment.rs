@@ -1,4 +1,7 @@
-use super::object::{Object, ObjectInfo, Type};
+use super::{
+    object::{Object, ObjectInfo},
+    type_system::Type,
+};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -33,7 +36,7 @@ impl Environment {
         name: String,
         value: Object,
         type_: Type,
-        is_assinable: bool,
+        is_assignable: bool,
     ) -> bool {
         if self.store.contains_key(&name) {
             return false;
@@ -41,7 +44,7 @@ impl Environment {
         self.store.insert(
             name,
             ObjectInfo {
-                is_assinable,
+                is_assignable,
                 type_,
                 value,
             },
@@ -54,7 +57,7 @@ impl Environment {
             Some(object_info) => object_info,
             None => return false,
         };
-        if !old_entry.is_assinable {
+        if !old_entry.is_assignable {
             return false;
         }
         old_entry.value = value;

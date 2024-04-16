@@ -1,5 +1,6 @@
-use super::object::{BuiltInFuncReturnValue, Object, ObjectInfo, Type};
+use super::object::{BuiltInFuncReturnValue, Object, ObjectInfo};
 use super::runtime_error::{ErrorKind, RuntimeError};
+use super::type_system::Type;
 use std::collections::HashMap;
 
 pub fn builtins() -> HashMap<String, ObjectInfo> {
@@ -8,7 +9,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "print".to_string(),
         ObjectInfo {
-            is_assinable: false,
+            is_assignable: false,
             type_: Type::Function,
             value: Object::BuiltInFunction(filipe_print),
         },
@@ -17,7 +18,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "len".to_string(),
         ObjectInfo {
-            is_assinable: false,
+            is_assignable: false,
             type_: Type::Function,
             value: Object::BuiltInFunction(filipe_len),
         },
@@ -26,7 +27,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "typeof".to_string(),
         ObjectInfo {
-            is_assinable: false,
+            is_assignable: false,
             type_: Type::Function,
             value: Object::BuiltInFunction(filipe_typeof),
         },
@@ -35,7 +36,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "true".to_string(),
         ObjectInfo {
-            is_assinable: false,
+            is_assignable: false,
             type_: Type::Boolean,
             value: Object::Boolean(true),
         },
@@ -44,7 +45,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "false".to_string(),
         ObjectInfo {
-            is_assinable: false,
+            is_assignable: false,
             type_: Type::Boolean,
             value: Object::Boolean(false),
         },
@@ -53,7 +54,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "null".to_string(),
         ObjectInfo {
-            is_assinable: false,
+            is_assignable: false,
             type_: Type::Null,
             value: Object::Null,
         },

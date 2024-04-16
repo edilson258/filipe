@@ -1,30 +1,31 @@
-use crate::evaluator::object::{FunctionParam, FunctionParams, Object, Type};
+use crate::evaluator::object::{FunctionParam, FunctionParams, Object};
+use crate::evaluator::type_system::{expr_type_to_object_type, Type};
 use crate::evaluator::{BlockStmt, Evaluator, ExprType, Identifier};
 
 pub fn eval_func_def(
     e: &mut Evaluator,
-    identifier: Identifier,
-    params: Vec<(Identifier, ExprType)>,
-    body: BlockStmt,
-    ret_type: ExprType,
+    identifier: &Identifier,
+    params: &Vec<(Identifier, ExprType)>,
+    body: &BlockStmt,
+    ret_type: &ExprType,
 ) {
     let Identifier(name) = identifier;
     let params = params
         .iter()
         .map(|param| {
             let Identifier(param_name) = param.0.clone();
-            let param_type = e.expr_type_to_object_type(param.1.clone());
+            let param_type = expr_type_to_object_type(&param.1);
             FunctionParam {
                 name: param_name,
                 type_: param_type,
             }
         })
         .collect::<FunctionParams>();
-    let return_type = e.expr_type_to_object_type(ret_type);
+    let return_type = expr_type_to_object_type(ret_type);
     let function_object = Object::UserDefinedFunction {
         name: name.clone(),
         params,
-        body,
+        body: body.clone(),
         return_type,
     };
     if !e
