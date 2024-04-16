@@ -1,6 +1,7 @@
 use core::fmt;
 
-use super::{BlockStmt, RuntimeError};
+use super::runtime_error::RuntimeError;
+use super::BlockStmt;
 
 pub enum BuiltInFuncReturnValue {
     Object(Object),

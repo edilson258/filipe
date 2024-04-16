@@ -1,5 +1,5 @@
 use super::object::{BuiltInFuncReturnValue, Object, ObjectInfo, Type};
-use super::{RuntimeError, RuntimeErrorKind};
+use super::runtime_error::{ErrorKind, RuntimeError};
 use std::collections::HashMap;
 
 pub fn builtins() -> HashMap<String, ObjectInfo> {
@@ -87,7 +87,7 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
 fn filipe_len(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     if args.len() != 1 {
         return BuiltInFuncReturnValue::Error(RuntimeError {
-            kind: RuntimeErrorKind::TypeError,
+            kind: ErrorKind::TypeError,
             msg: format!("'len' expects 1 arg but {} were provided", args.len()),
         });
     }
@@ -95,7 +95,7 @@ fn filipe_len(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     match args[0].value.clone() {
         Object::String(val) => BuiltInFuncReturnValue::Object(Object::Number(val.len() as f64)),
         _ => BuiltInFuncReturnValue::Error(RuntimeError {
-            kind: RuntimeErrorKind::TypeError,
+            kind: ErrorKind::TypeError,
             msg: format!("'len' only accepts iterable types"),
         }),
     }
@@ -104,7 +104,7 @@ fn filipe_len(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
 fn filipe_typeof(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     if args.len() != 1 {
         return BuiltInFuncReturnValue::Error(RuntimeError {
-            kind: RuntimeErrorKind::TypeError,
+            kind: ErrorKind::TypeError,
             msg: format!("'typeof' expects 1 arg but {} were provided", args.len()),
         });
     }

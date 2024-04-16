@@ -1,5 +1,4 @@
 use crate::evaluator::object::{FunctionParam, FunctionParams, Object, Type};
-use crate::evaluator::runtime_error::RuntimeErrorKind;
 use crate::evaluator::{BlockStmt, Evaluator, ExprType, Identifier};
 
 pub fn eval_func_def(
@@ -32,9 +31,7 @@ pub fn eval_func_def(
         .env
         .add_entry(name.clone(), function_object, Type::Function, false)
     {
-        e.set_error(
-            RuntimeErrorKind::NameError,
-            format!("'{}' is already declared", name),
-        );
+        e.error_handler
+            .set_name_error(format!("'{}' is already declared", name));
     }
 }

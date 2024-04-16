@@ -4,8 +4,6 @@ pub mod flstdlib;
 pub mod object;
 mod runtime_error;
 
-use core::f64;
-
 use crate::ast::*;
 use environment::Environment;
 use evaluators::func_call_evaluator::eval_call_expr;
@@ -13,24 +11,27 @@ use evaluators::func_def_evaluator::eval_func_def;
 use evaluators::let_evaluator::eval_let_stmt;
 use object::Object;
 use object::{object_to_type, Type};
-use runtime_error::{RuntimeError, RuntimeErrorKind};
+use runtime_error::RuntimeErrorHandler;
 
 pub struct Evaluator<'a> {
     env: &'a mut Environment,
-    error: Option<RuntimeError>,
+    pub error_handler: RuntimeErrorHandler,
 }
 
 impl<'a> Evaluator<'a> {
     pub fn new(env: &'a mut Environment) -> Self {
-        Self { env, error: None }
+        Self {
+            env,
+            error_handler: RuntimeErrorHandler::new(),
+        }
     }
 
     pub fn eval(&mut self, program: Program) -> Option<Object> {
         let mut output: Option<Object> = None;
         for stmt in program {
             let object = self.eval_stmt(stmt);
-            if self.get_error().is_some() {
-                eprintln!("{}", self.get_error().unwrap());
+            if self.error_handler.has_error() {
+                eprintln!("{}", self.error_handler.get_error().unwrap());
                 return None;
             }
             output = object;
@@ -83,7 +84,7 @@ impl<'a> Evaluator<'a> {
     fn is_truthy(&mut self, object: Object) -> bool {
         match object {
             Object::Null | Object::Boolean(false) => false,
-            Object::Number(val) => val != 0.0,
+            Object::Number(val) => val as i32 != 0,
             _ => true,
         }
     }
@@ -111,10 +112,8 @@ impl<'a> Evaluator<'a> {
     fn eval_assign_expr(&mut self, identifier: Identifier, expr: Expr) -> Option<Object> {
         let Identifier(name) = identifier;
         if !self.env.is_declared(&name) {
-            self.set_error(
-                RuntimeErrorKind::NameError,
-                format!("{} is not declared", name),
-            );
+            self.error_handler
+                .set_name_error(format!("'{}' is not declared", &name));
             return None;
         }
         let value = match self.eval_expr(expr) {
@@ -122,10 +121,8 @@ impl<'a> Evaluator<'a> {
             None => return None,
         };
         if !self.env.update_entry(&name, value) {
-            self.set_error(
-                RuntimeErrorKind::NameError,
-                format!("{} is not assignable", name),
-            )
+            self.error_handler
+                .set_name_error(format!("'{}' is not assignable", &name));
         }
         None
     }
@@ -155,15 +152,12 @@ impl<'a> Evaluator<'a> {
         let rhs = rhs.unwrap();
 
         if !self.has_same_type(&lhs, &rhs) {
-            self.set_error(
-                RuntimeErrorKind::TypeError,
-                format!(
-                    "'{}' operation not allowed between types {} and {}",
-                    infix,
-                    object_to_type(&lhs),
-                    object_to_type(&rhs),
-                ),
-            );
+            self.error_handler.set_type_error(format!(
+                "'{}' operation not allowed between types {} and {}",
+                infix,
+                object_to_type(&lhs),
+                object_to_type(&rhs),
+            ));
             return None;
         }
 
@@ -194,13 +188,10 @@ impl<'a> Evaluator<'a> {
         match infix {
             Infix::Plus => Object::String(lhs + &rhs),
             _ => {
-                self.set_error(
-                    RuntimeErrorKind::InvalidOp,
-                    format!(
-                        "{} operation not allowed between '{}' and '{}'",
-                        infix, lhs, rhs
-                    ),
-                );
+                self.error_handler.set_type_error(format!(
+                    "'{}' operation not implemented for type string",
+                    infix
+                ));
                 Object::Null
             }
         }
@@ -228,13 +219,10 @@ impl<'a> Evaluator<'a> {
             Infix::GratherThan => Object::Boolean(lhs_val > rhs_val),
             Infix::GratherOrEqual => Object::Boolean(lhs_val >= rhs_val),
             _ => {
-                self.set_error(
-                    RuntimeErrorKind::InvalidOp,
-                    format!(
-                        "{} operation not allowed between '{}' and '{}'",
-                        infix, lhs_val, rhs_val
-                    ),
-                );
+                self.error_handler.set_type_error(format!(
+                    "'{}' operation not implemented for type boolean",
+                    infix
+                ));
                 Object::Null
             }
         }
@@ -254,22 +242,12 @@ impl<'a> Evaluator<'a> {
         let object = match self.env.resolve(&name) {
             Some(object) => object,
             None => {
-                self.set_error(
-                    RuntimeErrorKind::NameError,
-                    format!("undeclared '{}'", name),
-                );
+                self.error_handler
+                    .set_name_error(format!("'{}' is not declared", &name));
                 return None;
             }
         };
         Some(object.value)
-    }
-
-    fn get_error(&self) -> Option<RuntimeError> {
-        return self.error.clone();
-    }
-
-    fn set_error(&mut self, kind: RuntimeErrorKind, msg: String) {
-        self.error = Some(RuntimeError { kind, msg });
     }
 
     fn expr_type_to_object_type(&mut self, var_type: ExprType) -> Type {
@@ -306,10 +284,8 @@ impl<'a> Evaluator<'a> {
         match self.env.get_typeof(&name) {
             Some(type_) => Some(type_),
             None => {
-                self.set_error(
-                    RuntimeErrorKind::NameError,
-                    format!("Couldn't resolve {}'s type maybe it's not declared", &name),
-                );
+                self.error_handler
+                    .set_name_error(format!("'{}' is not declared", &name));
                 return None;
             }
         }

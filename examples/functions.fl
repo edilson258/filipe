@@ -18,4 +18,4 @@ let foo = 34;
 let bar: number = 35;
 
 print(foo, " + ", bar, " = ", sum(foo, bar));
-print("foo + bar = ", concat("foo", "bar"));
+print("'foo' + 'bar' = '", concat("foo", "bar"), "'");

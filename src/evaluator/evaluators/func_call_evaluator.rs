@@ -1,6 +1,6 @@
 use super::super::object::*;
 use crate::evaluator::environment::Environment;
-use crate::evaluator::{Evaluator, Expr, Identifier, RuntimeErrorKind};
+use crate::evaluator::{Evaluator, Expr, Identifier};
 
 pub fn eval_call_expr(
     e: &mut Evaluator,
@@ -27,10 +27,8 @@ pub fn eval_call_expr(
             name
         }
         None => {
-            e.set_error(
-                RuntimeErrorKind::TypeError,
-                format!("invalid function name {:?}", func_ident),
-            );
+            e.error_handler
+                .set_type_error(format!("invalid function name {:?}", func_ident));
             return None;
         }
     };
@@ -44,7 +42,7 @@ pub fn eval_call_expr(
         Object::BuiltInFunction(builtin_fn) => match builtin_fn(checked_args) {
             BuiltInFuncReturnValue::Object(object) => return Some(object),
             BuiltInFuncReturnValue::Error(err) => {
-                e.set_error(err.kind, err.msg);
+                e.error_handler.set_error(err.kind, err.msg);
                 return None;
             }
         },
@@ -55,24 +53,19 @@ pub fn eval_call_expr(
             return_type,
         } => (name, params, body, return_type),
         _ => {
-            e.set_error(
-                RuntimeErrorKind::TypeError,
-                format!("'{}' is not callable", func_name),
-            );
+            e.error_handler
+                .set_type_error(format!("'{}' is not callable", func_name));
             return None;
         }
     };
 
     if params.len() != checked_args.len() {
-        e.set_error(
-            RuntimeErrorKind::TypeError,
-            format!(
-                "Function '{}' expecteds {} args but provided {}",
-                name,
-                params.len(),
-                checked_args.len()
-            ),
-        );
+        e.error_handler.set_type_error(format!(
+            "Function '{}' expecteds {} args but provided {}",
+            name,
+            params.len(),
+            checked_args.len()
+        ));
         return None;
     }
 
@@ -83,13 +76,10 @@ pub fn eval_call_expr(
         params.iter().zip(checked_args).enumerate()
     {
         if *type_ != object_info.type_ {
-            e.set_error(
-                RuntimeErrorKind::TypeError,
-                format!(
-                    "passing argument of type '{}' to parameter of type '{}'",
-                    &object_info.type_, type_
-                ),
-            );
+            e.error_handler.set_type_error(format!(
+                "passing argument of type '{}' to parameter of type '{}'",
+                &object_info.type_, type_
+            ));
             return None;
         }
 
@@ -101,13 +91,10 @@ pub fn eval_call_expr(
     let provided_type = object_to_type(&returned_value);
 
     if provided_type != expected_ret_type {
-        e.set_error(
-            RuntimeErrorKind::TypeError,
-            format!(
-                "function '{}' must return '{}' but found '{}'",
-                name, expected_ret_type, provided_type
-            ),
-        );
+        e.error_handler.set_type_error(format!(
+            "function '{}' must return '{}' but found '{}'",
+            name, expected_ret_type, provided_type
+        ));
         return None;
     }
 
