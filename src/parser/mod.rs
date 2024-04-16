@@ -181,6 +181,7 @@ impl<'a> Parser<'a> {
             Token::True => Some(Expr::Literal(Literal::Boolean(true))),
             Token::False => Some(Expr::Literal(Literal::Boolean(false))),
             Token::Null => Some(Expr::Literal(Literal::Null)),
+            Token::Bang | Token::Plus | Token::Minus => self.parse_prefix_expr(),
             _ => {
                 let token = self.curr_token.clone();
                 self.error_handler.set_unexpexted_token_error(&token);
@@ -204,6 +205,7 @@ impl<'a> Parser<'a> {
                 | Token::Asterisk
                 | Token::Slash
                 | Token::DoubleEqual
+                | Token::NotEqual
                 | Token::GratherThan
                 | Token::LessThan
                 | Token::GratherOrEqual
@@ -223,6 +225,24 @@ impl<'a> Parser<'a> {
             }
         }
         left
+    }
+
+    fn parse_prefix_expr(&mut self) -> Option<Expr> {
+        let prefix = match self.curr_token {
+            Token::Bang => Prefix::Not,
+            Token::Plus => Prefix::Plus,
+            Token::Minus => Prefix::Minus,
+            _ => return None,
+        };
+
+        self.bump();
+
+        let expr = match self.parse_expr(Precedence::Prefix) {
+            Some(expr) => expr,
+            None => return None,
+        };
+
+        Some(Expr::Prefix(prefix, Box::new(expr)))
     }
 
     fn parse_assign_expr(&mut self, left: Expr) -> Option<Expr> {
@@ -248,6 +268,7 @@ impl<'a> Parser<'a> {
             Token::Minus => Infix::Minus,
             Token::Asterisk => Infix::Multiply,
             Token::Slash => Infix::Devide,
+            Token::NotEqual => Infix::NotEqual,
             Token::DoubleEqual => Infix::Equal,
             Token::LessThan => Infix::LessThan,
             Token::LessOrEqual => Infix::LessOrEqual,
@@ -324,6 +345,7 @@ impl<'a> Parser<'a> {
             Token::Lparen => Precedence::Call,
             Token::Equal => Precedence::Assign,
             Token::DoubleEqual
+            | Token::NotEqual
             | Token::LessThan
             | Token::LessOrEqual
             | Token::GratherThan

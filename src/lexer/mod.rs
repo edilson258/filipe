@@ -64,6 +64,14 @@ impl<'a> Lexer<'a> {
             '/' => Some(Token::Slash),
             ':' => Some(Token::Colon),
             ';' => Some(Token::Semicolon),
+            '!' => {
+                if self.next_char_is('=') {
+                    self.read_char();
+                    Some(Token::NotEqual)
+                } else {
+                    Some(Token::Bang)
+                }
+            }
             '>' => {
                 if self.next_char_is('=') {
                     self.read_char();

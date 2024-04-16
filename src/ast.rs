@@ -28,6 +28,7 @@ pub enum Expr {
     Call(Box<Expr>, Vec<Expr>),
     Identifier(Identifier),
     Infix(Box<Expr>, Infix, Box<Expr>),
+    Prefix(Prefix, Box<Expr>),
     Assign(Identifier, Box<Expr>),
 }
 
@@ -51,6 +52,7 @@ pub enum Precedence {
     Comparison, // x > 6
     Sum,        // +
     Product,    // *
+    Prefix,     // !true || -5
     Call,       // myFunction(x)
 }
 
@@ -61,10 +63,28 @@ pub enum Infix {
     Devide,
     Multiply,
     Equal,
+    NotEqual,
     LessThan,
     LessOrEqual,
     GratherThan,
     GratherOrEqual,
+}
+
+#[derive(Debug, Clone)]
+pub enum Prefix {
+    Not,
+    Plus,
+    Minus,
+}
+
+impl fmt::Display for Prefix {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Prefix::Not => write!(f, "!"),
+            Prefix::Plus => write!(f, "+"),
+            Prefix::Minus => write!(f, "-"),
+        }
+    }
 }
 
 impl fmt::Display for Infix {
@@ -75,6 +95,7 @@ impl fmt::Display for Infix {
             Infix::Devide => write!(f, "/"),
             Infix::Multiply => write!(f, "*"),
             Infix::Equal => write!(f, "=="),
+            Infix::NotEqual => write!(f, "!="),
             Infix::LessThan => write!(f, "<"),
             Infix::LessOrEqual => write!(f, "<="),
             Infix::GratherThan => write!(f, ">"),

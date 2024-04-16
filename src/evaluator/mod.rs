@@ -95,7 +95,49 @@ impl<'a> Evaluator<'a> {
             Expr::Identifier(identifier) => self.resolve_identfier(identifier),
             Expr::Call(func, args) => eval_call_expr(self, *func, args),
             Expr::Infix(lhs, infix, rhs) => self.eval_infix_expr(*lhs, infix, *rhs),
+            Expr::Prefix(prefix, expr) => self.eval_prefix_expr(prefix, *expr),
             Expr::Assign(identifier, expr) => self.eval_assign_expr(identifier, *expr),
+        }
+    }
+
+    fn eval_prefix_expr(&mut self, prefix: Prefix, expr: Expr) -> Option<Object> {
+        let evaluated_expr = match self.eval_expr(expr) {
+            Some(object) => object,
+            None => return None,
+        };
+
+        match prefix {
+            Prefix::Not => self.eval_not_prefix(evaluated_expr),
+            Prefix::Plus => self.eval_plus_prefix(prefix, evaluated_expr),
+            Prefix::Minus => self.eval_minus_prefix(prefix, evaluated_expr),
+        }
+    }
+
+    fn eval_not_prefix(&mut self, evaluated_expr: Object) -> Option<Object> {
+        match evaluated_expr {
+            Object::Null => Some(Object::Boolean(true)),
+            Object::Boolean(val) => Some(Object::Boolean(!val)),
+            _ => Some(Object::Boolean(false))
+        }
+    }
+
+    fn eval_plus_prefix(&mut self, prefix: Prefix ,evaluated_expr: Object) -> Option<Object> {
+        match evaluated_expr {
+            Object::Number(val) => Some(Object::Number(val)),
+            _ => {
+                self.error_handler.set_type_error(format!("'{}' prefix is for type number", prefix));
+                return None;
+            }
+        }
+    }
+
+    fn eval_minus_prefix(&mut self, prefix: Prefix ,evaluated_expr: Object) -> Option<Object> {
+        match evaluated_expr {
+            Object::Number(val) => Some(Object::Number(-val)),
+            _ => {
+                self.error_handler.set_type_error(format!("'{}' prefix is for type number", prefix));
+                return None;
+            }
         }
     }
 
@@ -187,6 +229,8 @@ impl<'a> Evaluator<'a> {
     fn eval_infix_string_expr(&mut self, lhs: String, infix: Infix, rhs: String) -> Object {
         match infix {
             Infix::Plus => Object::String(lhs + &rhs),
+            Infix::NotEqual => Object::Boolean(lhs != rhs),
+            Infix::Equal => Object::Boolean(lhs == rhs),
             _ => {
                 self.error_handler.set_type_error(format!(
                     "'{}' operation not implemented for type string",
@@ -208,6 +252,7 @@ impl<'a> Evaluator<'a> {
             Infix::LessOrEqual => Object::Boolean(lhs_val <= rhs_val),
             Infix::GratherThan => Object::Boolean(lhs_val > rhs_val),
             Infix::GratherOrEqual => Object::Boolean(lhs_val >= rhs_val),
+            Infix::NotEqual => Object::Boolean(lhs_val != rhs_val),
         }
     }
 
@@ -218,6 +263,7 @@ impl<'a> Evaluator<'a> {
             Infix::LessOrEqual => Object::Boolean(lhs_val <= rhs_val),
             Infix::GratherThan => Object::Boolean(lhs_val > rhs_val),
             Infix::GratherOrEqual => Object::Boolean(lhs_val >= rhs_val),
+            Infix::NotEqual => Object::Boolean(lhs_val != rhs_val),
             _ => {
                 self.error_handler.set_type_error(format!(
                     "'{}' operation not implemented for type boolean",

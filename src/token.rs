@@ -24,6 +24,8 @@ pub enum Token {
     GratherOrEqual,
     LessThan,
     LessOrEqual,
+    Bang,
+    NotEqual,
 
     String(String),
     Number(f64),
@@ -79,6 +81,8 @@ impl fmt::Display for Token {
             Self::BooleanType => write!(f, "[Type Annotation] boolean"),
             Self::If => write!(f, "if"),
             Self::Else => write!(f, "else"),
+            Self::Bang => write!(f, "!"),
+            Self::NotEqual => write!(f, "!="),
         }
     }
 }
