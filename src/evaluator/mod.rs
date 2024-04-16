@@ -289,6 +289,7 @@ impl<'a> Evaluator<'a> {
             Infix::GratherThan => Object::Boolean(lhs_val > rhs_val),
             Infix::GratherOrEqual => Object::Boolean(lhs_val >= rhs_val),
             Infix::NotEqual => Object::Boolean(lhs_val != rhs_val),
+            Infix::Remainder => Object::Number(lhs_val % rhs_val),
         }
     }
 

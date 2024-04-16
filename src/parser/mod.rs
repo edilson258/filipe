@@ -208,6 +208,7 @@ impl<'a> Parser<'a> {
                 | Token::NotEqual
                 | Token::GratherThan
                 | Token::LessThan
+                | Token::Percet
                 | Token::GratherOrEqual
                 | Token::LessOrEqual => {
                     self.bump();
@@ -282,6 +283,7 @@ impl<'a> Parser<'a> {
             Token::Minus => Infix::Minus,
             Token::Asterisk => Infix::Multiply,
             Token::Slash => Infix::Devide,
+            Token::Percet => Infix::Remainder,
             Token::NotEqual => Infix::NotEqual,
             Token::DoubleEqual => Infix::Equal,
             Token::LessThan => Infix::LessThan,
@@ -355,7 +357,7 @@ impl<'a> Parser<'a> {
     fn token_to_precedence(token: &Token) -> Precedence {
         match token {
             Token::Plus | Token::Minus => Precedence::Sum,
-            Token::Asterisk | Token::Slash => Precedence::Product,
+            Token::Asterisk | Token::Slash | Token::Percet => Precedence::Product,
             Token::Lparen => Precedence::Call,
             Token::Equal => Precedence::Assign,
             Token::DoubleEqual

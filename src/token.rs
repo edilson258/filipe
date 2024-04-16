@@ -18,6 +18,7 @@ pub enum Token {
     Asterisk,
     Slash,
     Equal,
+    Percet,
 
     DoubleEqual,
     GratherThan,
@@ -87,6 +88,7 @@ impl fmt::Display for Token {
             Self::NotEqual => write!(f, "!="),
             Self::DoublePlus => write!(f, "++"),
             Self::DoubleMinus => write!(f, "--"),
+            Self::Percet => write!(f, "%"),
         }
     }
 }

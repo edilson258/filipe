@@ -67,6 +67,7 @@ pub enum Infix {
     Equal,
     NotEqual,
     LessThan,
+    Remainder,
     LessOrEqual,
     GratherThan,
     GratherOrEqual,
@@ -117,6 +118,7 @@ impl fmt::Display for Infix {
             Infix::LessOrEqual => write!(f, "<="),
             Infix::GratherThan => write!(f, ">"),
             Infix::GratherOrEqual => write!(f, ">="),
+            Infix::Remainder => write!(f, "%"),
         }
     }
 }
