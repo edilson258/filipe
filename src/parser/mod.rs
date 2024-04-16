@@ -221,10 +221,24 @@ impl<'a> Parser<'a> {
                     self.bump();
                     left = self.parse_assign_expr(left.unwrap());
                 }
+                Token::DoublePlus | Token::DoubleMinus => {
+                    self.bump();
+                    left = self.parse_postfix_expr(left.unwrap());
+                }
                 _ => return left,
             }
         }
         left
+    }
+
+    fn parse_postfix_expr(&mut self, left: Expr) -> Option<Expr> {
+        let postfix = match self.curr_token {
+            Token::DoublePlus => Postfix::Increment,
+            Token::DoubleMinus => Postfix::Decrement,
+            _ => return None,
+        };
+
+        Some(Expr::Postfix(Box::new(left), postfix))
     }
 
     fn parse_prefix_expr(&mut self) -> Option<Expr> {
@@ -350,6 +364,7 @@ impl<'a> Parser<'a> {
             | Token::LessOrEqual
             | Token::GratherThan
             | Token::GratherOrEqual => Precedence::Comparison,
+            Token::DoublePlus | Token::DoubleMinus => Precedence::Postfix,
             _ => Precedence::Lowest,
         }
     }

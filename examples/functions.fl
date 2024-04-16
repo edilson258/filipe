@@ -19,3 +19,5 @@ let bar: number = 35;
 
 print(foo, " + ", bar, " = ", sum(foo, bar));
 print("'foo' + 'bar' = '", concat("foo", "bar"), "'");
+
+print(10-- * 10);

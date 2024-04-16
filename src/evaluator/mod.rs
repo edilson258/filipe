@@ -97,7 +97,28 @@ impl<'a> Evaluator<'a> {
             Expr::Call(func, args) => eval_call_expr(self, func, args),
             Expr::Infix(lhs, infix, rhs) => self.eval_infix_expr(lhs, infix, rhs),
             Expr::Prefix(prefix, expr) => self.eval_prefix_expr(prefix, expr),
+            Expr::Postfix(expr, postfix) => self.eval_postfix_expr(expr, postfix),
             Expr::Assign(identifier, expr) => self.eval_assign_expr(identifier, expr),
+        }
+    }
+
+    fn eval_postfix_expr(&mut self, expr: &Expr, postfix: &Postfix) -> Option<Object> {
+        let evaluated_expr = match self.eval_expr(expr) {
+            Some(object) => object,
+            None => return None,
+        };
+
+        let old_value = match evaluated_expr {
+            Object::Number(val) => val,
+            _ => {
+                self.error_handler.set_type_error(format!("'{}' operation is only allowed for type 'number'", postfix));
+                return None;
+            }
+        };
+
+        match postfix {
+            Postfix::Increment => Some(Object::Number(old_value + 1 as f64)),
+            Postfix::Decrement => Some(Object::Number(old_value - 1 as f64)),
         }
     }
 

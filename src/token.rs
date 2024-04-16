@@ -26,6 +26,8 @@ pub enum Token {
     LessOrEqual,
     Bang,
     NotEqual,
+    DoublePlus,
+    DoubleMinus,
 
     String(String),
     Number(f64),
@@ -83,6 +85,8 @@ impl fmt::Display for Token {
             Self::Else => write!(f, "else"),
             Self::Bang => write!(f, "!"),
             Self::NotEqual => write!(f, "!="),
+            Self::DoublePlus => write!(f, "++"),
+            Self::DoubleMinus => write!(f, "--"),
         }
     }
 }

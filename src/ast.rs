@@ -29,6 +29,7 @@ pub enum Expr {
     Identifier(Identifier),
     Infix(Box<Expr>, Infix, Box<Expr>),
     Prefix(Prefix, Box<Expr>),
+    Postfix(Box<Expr>, Postfix),
     Assign(Identifier, Box<Expr>),
 }
 
@@ -53,6 +54,7 @@ pub enum Precedence {
     Sum,        // +
     Product,    // *
     Prefix,     // !true || -5
+    Postfix,    // 69++ || 10--
     Call,       // myFunction(x)
 }
 
@@ -75,6 +77,21 @@ pub enum Prefix {
     Not,
     Plus,
     Minus,
+}
+
+#[derive(Debug, Clone)]
+pub enum Postfix {
+    Increment,
+    Decrement,
+}
+
+impl fmt::Display for Postfix {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::Increment => write!(f, "++"),
+            Self::Decrement => write!(f, "--"),
+        }
+    }
 }
 
 impl fmt::Display for Prefix {

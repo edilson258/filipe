@@ -58,12 +58,26 @@ impl<'a> Lexer<'a> {
             '{' => Some(Token::Lbrace),
             '}' => Some(Token::Rbrace),
             ',' => Some(Token::Comma),
-            '+' => Some(Token::Plus),
-            '-' => Some(Token::Minus),
             '*' => Some(Token::Asterisk),
             '/' => Some(Token::Slash),
             ':' => Some(Token::Colon),
             ';' => Some(Token::Semicolon),
+            '-' => {
+                if self.next_char_is('-') {
+                    self.read_char();
+                    Some(Token::DoubleMinus)
+                } else {
+                    Some(Token::Minus)
+                }
+            },
+            '+' => {
+                if self.next_char_is('+') {
+                    self.read_char();
+                    Some(Token::DoublePlus)
+                } else {
+                    Some(Token::Plus)
+                }
+            },
             '!' => {
                 if self.next_char_is('=') {
                     self.read_char();
