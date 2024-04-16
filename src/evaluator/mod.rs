@@ -162,6 +162,15 @@ impl<'a> Evaluator<'a> {
             Some(value) => value,
             None => return None,
         };
+
+        let old_value_type = self.env.get_typeof(&name).unwrap();
+        let new_value_type = object_to_type(&value);
+
+        if old_value_type != new_value_type {
+            self.error_handler.set_type_error(format!("can't assign value of type '{}' to value of type '{}'", old_value_type, new_value_type));
+            return None;
+        }
+
         if !self.env.update_entry(&name, value) {
             self.error_handler
                 .set_name_error(format!("'{}' is not assignable", &name));
