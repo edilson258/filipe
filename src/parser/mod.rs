@@ -79,13 +79,18 @@ impl<'a> Parser<'a> {
             Some(block) => block,
             None => return None,
         };
-        self.bump();
-
-        let mut alternative: Option<BlockStmt> = None;
-
-        if self.current_token_is(&Token::Else) {
+        
+        let alternative: Option<BlockStmt> = match self.next_token_is(&Token::Else) {
+            true => {
+                self.bump();
+                self.bump();
+                self.parse_block_stmt()
+            },
+            false => None,
+        };
+        
+        if self.next_token_is(&Token::Semicolon) {
             self.bump();
-            alternative = self.parse_block_stmt();
         }
 
         Some(Stmt::If {
