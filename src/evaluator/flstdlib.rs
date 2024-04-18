@@ -34,6 +34,15 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     );
 
     builtin_list.insert(
+        "range".to_string(),
+        ObjectInfo {
+            is_assignable: false,
+            type_: Type::Function,
+            value: Object::BuiltInFunction(filipe_range),
+        },
+    );
+
+    builtin_list.insert(
         "true".to_string(),
         ObjectInfo {
             is_assignable: false,
@@ -79,6 +88,7 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
             Object::RetVal(val) => print!("{}", val),
             Object::Boolean(val) => print!("{}", val),
             Object::Type(val) => print!("{}", val),
+            Object::Range { start: _, end: _ } => print!("{}", &arg.value),
         }
     }
     println!();
@@ -111,4 +121,39 @@ fn filipe_typeof(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     }
 
     BuiltInFuncReturnValue::Object(Object::Type(args[0].type_.clone()))
+}
+
+fn filipe_range(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
+    if args.len() != 2 {
+        return BuiltInFuncReturnValue::Error({
+            RuntimeError {
+                kind: ErrorKind::TypeError,
+                msg: format!(
+                    "function 'range' takes 2 argus but {} were provided",
+                    args.len()
+                ),
+            }
+        });
+    }
+
+    if args[0].type_ != Type::Number || args[1].type_ != Type::Number {
+        return BuiltInFuncReturnValue::Error({
+            RuntimeError {
+                kind: ErrorKind::TypeError,
+                msg: format!("args for function 'range' must be of type number"),
+            }
+        });
+    }
+
+    let start = match args[0].value {
+        Object::Number(x) => x as i64,
+        _ => 0,
+    };
+
+    let end = match args[1].value {
+        Object::Number(x) => x as i64,
+        _ => 0,
+    };
+
+    BuiltInFuncReturnValue::Object(Object::Range { start, end })
 }

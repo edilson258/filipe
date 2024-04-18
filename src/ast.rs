@@ -44,6 +44,11 @@ pub enum Stmt {
         consequence: BlockStmt,
         alternative: Option<BlockStmt>,
     },
+    ForLoop {
+        cursor: String,
+        iterable: Expr,
+        block: BlockStmt,
+    },
 }
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]

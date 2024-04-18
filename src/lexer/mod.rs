@@ -148,6 +148,8 @@ impl<'a> Lexer<'a> {
             "boolean" => Token::BooleanType,
             "if" => Token::If,
             "else" => Token::Else,
+            "for" => Token::For,
+            "in" => Token::In,
             _ => Token::Identifier(literal),
         }
     }

@@ -57,7 +57,64 @@ impl<'a> Evaluator<'a> {
                 consequence,
                 alternative,
             } => self.eval_if_stmt(condition, consequence, alternative),
+            Stmt::ForLoop {
+                cursor,
+                iterable,
+                block,
+            } => self.eval_forloop_stmt(cursor, iterable, block),
         }
+    }
+
+    fn eval_forloop_stmt(
+        &mut self,
+        cursor: &String,
+        iterable: &Expr,
+        block: &BlockStmt,
+    ) -> Option<Object> {
+        let iterable_object = match self.eval_expr(iterable) {
+            Some(object) => object,
+            None => return None,
+        };
+        match iterable_object {
+            Object::Range { start, end } => self.eval_range_forloop(cursor, start, end, block),
+            _ => {
+                self.error_handler
+                    .set_type_error(format!("for loop works only with range (for now)"));
+                return None;
+            }
+        }
+    }
+
+    fn eval_range_forloop(
+        &mut self,
+        cursor: &String,
+        start: i64,
+        end: i64,
+        block: &BlockStmt,
+    ) -> Option<Object> {
+        let global_scope = self.env.clone();
+        let block_scope = Environment::empty(Some(self.env.clone()));
+        *self.env = block_scope;
+
+        self.env.add_entry(
+            cursor.clone(),
+            Object::Number(start as f64),
+            Type::Number,
+            true,
+        );
+
+        for _ in start..end {
+            self.eval_block_stmt(block);
+            let old_val = match self.env.resolve(&cursor).unwrap().value {
+                Object::Number(val) => val,
+                _ => return None,
+            };
+            self.env
+                .update_entry(&cursor, Object::Number(old_val + 1.0));
+        }
+
+        *self.env = global_scope;
+        None
     }
 
     fn is_truthy(&mut self, object: Object) -> bool {
@@ -111,7 +168,10 @@ impl<'a> Evaluator<'a> {
         let old_value = match evaluated_expr {
             Object::Number(val) => val,
             _ => {
-                self.error_handler.set_type_error(format!("'{}' operation is only allowed for type 'number'", postfix));
+                self.error_handler.set_type_error(format!(
+                    "'{}' operation is only allowed for type 'number'",
+                    postfix
+                ));
                 return None;
             }
         };

@@ -42,6 +42,8 @@ pub enum Token {
     Null,
     If,
     Else,
+    For,
+    In,
 
     StringType,
     BooleanType,
@@ -89,6 +91,8 @@ impl fmt::Display for Token {
             Self::DoublePlus => write!(f, "++"),
             Self::DoubleMinus => write!(f, "--"),
             Self::Percet => write!(f, "%"),
+            Self::For => write!(f, "for"),
+            Self::In => write!(f, "in"),
         }
     }
 }

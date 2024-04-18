@@ -30,7 +30,7 @@ fn eval_repl_line(line: String, env: &mut Environment) {
         return;
     }
 
-    match evaluated.unwrap() {
+    match evaluated.clone().unwrap() {
         Object::Number(val) => println!("{val}"),
         Object::String(val) => println!("\"{val}\""),
         Object::BuiltInFunction(_) => println!("[Builtin Function]"),
@@ -44,6 +44,7 @@ fn eval_repl_line(line: String, env: &mut Environment) {
             return_type: _,
         } => println!("[User Defined Function] {name}"),
         Object::RetVal(val) => println!("{}", val),
+        Object::Range { start: _, end: _ } => println!("{}", evaluated.unwrap())
     }
 }
 

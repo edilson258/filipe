@@ -32,6 +32,10 @@ pub enum Object {
         return_type: Type,
     },
     BuiltInFunction(BuiltInFunction),
+    Range {
+        start: i64,
+        end: i64,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -57,6 +61,7 @@ impl fmt::Display for Object {
             Self::RetVal(val) => write!(f, "{}", val),
             Self::Boolean(val) => write!(f, "{}", val),
             Self::Type(val) => write!(f, "{}", val),
+            Self::Range { start, end } => write!(f, "range({start}, {end})"),
         }
     }
 }
@@ -70,6 +75,7 @@ impl fmt::Display for Type {
             Self::String => write!(f, "string"),
             Self::Function => write!(f, "function"),
             Self::TypeAnnot => write!(f, "[Type Annotation]"),
+            Self::Range => write!(f, "{}", self),
         }
     }
 }

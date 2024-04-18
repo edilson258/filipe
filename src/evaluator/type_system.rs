@@ -8,6 +8,7 @@ pub enum Type {
     Boolean,
     Function,
     TypeAnnot,
+    Range,
 }
 
 pub fn expr_type_to_object_type(var_type: &ExprType) -> Type {
@@ -66,5 +67,6 @@ pub fn object_to_type(object: &Object) -> Type {
         } => Type::Function,
         Object::RetVal(val) => object_to_type(&val),
         Object::Type(_) => Type::TypeAnnot,
+        Object::Range { start: _, end: _ } => Type::Range,
     }
 }

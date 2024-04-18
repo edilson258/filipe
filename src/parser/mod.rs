@@ -54,8 +54,46 @@ impl<'a> Parser<'a> {
             Token::Func => parse_func_stmt(self),
             Token::Return => self.parse_return_stmt(),
             Token::If => self.parse_if_stmt(),
+            Token::For => self.parse_forloop_stmt(),
             _ => self.parse_expr_stmt(),
         }
+    }
+
+    fn parse_forloop_stmt(&mut self) -> Option<Stmt> {
+        self.bump();
+        let loop_cursor_name = match self.parse_identifier() {
+            Some(identifier) => {
+                let Identifier(name) = identifier;
+                name
+            }
+            None => {
+                self.error_handler.set_identifier_error(&self.curr_token);
+                return None;
+            }
+        };
+
+        if !self.bump_expected_next(&Token::In) {
+            return None;
+        }
+
+        self.bump();
+
+        let iterable = match self.parse_expr(Precedence::Lowest) {
+            Some(expr) => expr,
+            None => return None,
+        };
+        self.bump();
+
+        let block = match self.parse_block_stmt() {
+            Some(block) => block,
+            None => return None,
+        };
+
+        Some(Stmt::ForLoop {
+            cursor: loop_cursor_name,
+            iterable,
+            block,
+        })
     }
 
     fn parse_if_stmt(&mut self) -> Option<Stmt> {
@@ -79,16 +117,16 @@ impl<'a> Parser<'a> {
             Some(block) => block,
             None => return None,
         };
-        
+
         let alternative: Option<BlockStmt> = match self.next_token_is(&Token::Else) {
             true => {
                 self.bump();
                 self.bump();
                 self.parse_block_stmt()
-            },
+            }
             false => None,
         };
-        
+
         if self.next_token_is(&Token::Semicolon) {
             self.bump();
         }
