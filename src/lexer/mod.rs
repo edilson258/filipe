@@ -143,9 +143,10 @@ impl<'a> Lexer<'a> {
             "true" => Token::True,
             "false" => Token::False,
             "null" => Token::Null,
-            "string" => Token::StringType,
-            "number" => Token::NumberType,
-            "boolean" => Token::BooleanType,
+            "string" => Token::TypeString,
+            "int" => Token::TypeInt,
+            "float" => Token::TypeFloat,
+            "boolean" => Token::TypeBoolean,
             "if" => Token::If,
             "else" => Token::Else,
             "for" => Token::For,
@@ -162,7 +163,10 @@ impl<'a> Lexer<'a> {
 
     fn read_number(&mut self) -> Token {
         let literal = self.chop_while(|x| x.is_numeric() || x == '.');
-        return Token::Number(literal.parse::<f64>().unwrap());
+        if literal.contains(".") {
+            return Token::Float(literal.parse::<f64>().unwrap());
+        }
+        return Token::Int(literal.parse::<i64>().unwrap());
     }
 
     fn skip_whitespace(&mut self) {

@@ -21,7 +21,8 @@ pub type FunctionParams = Vec<FunctionParam>;
 pub enum Object {
     Null,
     Type(Type),
-    Number(f64),
+    Int(i64),
+    Float(f64),
     Boolean(bool),
     String(String),
     RetVal(Box<Object>),
@@ -49,7 +50,8 @@ impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::String(val) => write!(f, "'{}'", val),
-            Self::Number(val) => write!(f, "{}", val),
+            Self::Int(val) => write!(f, "{}", val),
+            Self::Float(val) => write!(f, "{}", val),
             Self::BuiltInFunction(_) => write!(f, "[Builtin Function]"),
             Self::Null => write!(f, "null"),
             Self::UserDefinedFunction {
@@ -70,7 +72,8 @@ impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
-            Self::Number => write!(f, "number"),
+            Self::Int => write!(f, "int"),
+            Self::Float => write!(f, "float"),
             Self::Boolean => write!(f, "boolean"),
             Self::String => write!(f, "string"),
             Self::Function => write!(f, "function"),

@@ -98,19 +98,19 @@ impl<'a> Evaluator<'a> {
 
         self.env.add_entry(
             cursor.clone(),
-            Object::Number(start as f64),
-            Type::Number,
+            Object::Int(start),
+            Type::Int,
             true,
         );
 
         for _ in start..end {
             self.eval_block_stmt(block);
             let old_val = match self.env.resolve(&cursor).unwrap().value {
-                Object::Number(val) => val,
+                Object::Int(val) => val,
                 _ => return None,
             };
             self.env
-                .update_entry(&cursor, Object::Number(old_val + 1.0));
+                .update_entry(&cursor, Object::Int(old_val + 1));
         }
 
         *self.env = global_scope;
@@ -120,7 +120,8 @@ impl<'a> Evaluator<'a> {
     fn is_truthy(&mut self, object: Object) -> bool {
         match object {
             Object::Null | Object::Boolean(false) => false,
-            Object::Number(val) => val as i32 != 0,
+            Object::Int(val) => val != 0,
+            Object::Float(val) => val != 0.0,
             _ => true,
         }
     }
@@ -166,7 +167,7 @@ impl<'a> Evaluator<'a> {
         };
 
         let old_value = match evaluated_expr {
-            Object::Number(val) => val,
+            Object::Int(val) => val,
             _ => {
                 self.error_handler.set_type_error(format!(
                     "'{}' operation is only allowed for type 'number'",
@@ -177,8 +178,8 @@ impl<'a> Evaluator<'a> {
         };
 
         match postfix {
-            Postfix::Increment => Some(Object::Number(old_value + 1 as f64)),
-            Postfix::Decrement => Some(Object::Number(old_value - 1 as f64)),
+            Postfix::Increment => Some(Object::Int(old_value + 1)),
+            Postfix::Decrement => Some(Object::Int(old_value - 1)),
         }
     }
 
@@ -205,7 +206,8 @@ impl<'a> Evaluator<'a> {
 
     fn eval_plus_prefix(&mut self, prefix: &Prefix, evaluated_expr: &Object) -> Option<Object> {
         match evaluated_expr {
-            Object::Number(val) => Some(Object::Number(val.clone())),
+            Object::Int(val) => Some(Object::Int(val.clone())),
+            Object::Float(val) => Some(Object::Float(val.clone())),
             _ => {
                 self.error_handler
                     .set_type_error(format!("'{}' prefix is for type number", prefix));
@@ -216,7 +218,8 @@ impl<'a> Evaluator<'a> {
 
     fn eval_minus_prefix(&mut self, prefix: &Prefix, evaluated_expr: &Object) -> Option<Object> {
         match evaluated_expr {
-            Object::Number(val) => Some(Object::Number(-val)),
+            Object::Int(val) => Some(Object::Int(-val)),
+            Object::Float(val) => Some(Object::Float(-val)),
             _ => {
                 self.error_handler
                     .set_type_error(format!("'{}' prefix is for type number", prefix));
@@ -300,9 +303,15 @@ impl<'a> Evaluator<'a> {
         }
 
         match lhs {
-            Object::Number(lval) => {
-                if let Object::Number(rval) = rhs {
-                    return Some(self.eval_infix_number_expr(lval, infix, rval));
+            Object::Int(lval) => {
+                if let Object::Int(rval) = rhs {
+                    return Some(self.eval_infix_int_expr(lval, infix, rval));
+                }
+                None
+            }
+            Object::Float(lval) => {
+                if let Object::Float(rval) = rhs {
+                    return Some(self.eval_infix_float_expr(lval, infix, rval));
                 }
                 None
             }
@@ -337,19 +346,35 @@ impl<'a> Evaluator<'a> {
         }
     }
 
-    fn eval_infix_number_expr(&mut self, lhs_val: f64, infix: &Infix, rhs_val: f64) -> Object {
+    fn eval_infix_int_expr(&mut self, lhs_val: i64, infix: &Infix, rhs_val: i64) -> Object {
         match infix {
-            Infix::Plus => Object::Number(lhs_val + rhs_val),
-            Infix::Minus => Object::Number(lhs_val - rhs_val),
-            Infix::Devide => Object::Number(lhs_val / rhs_val),
-            Infix::Multiply => Object::Number(lhs_val * rhs_val),
+            Infix::Plus => Object::Int(lhs_val + rhs_val),
+            Infix::Minus => Object::Int(lhs_val - rhs_val),
+            Infix::Devide => Object::Int(lhs_val / rhs_val),
+            Infix::Multiply => Object::Int(lhs_val * rhs_val),
+            Infix::Remainder => Object::Int(lhs_val % rhs_val),
             Infix::Equal => Object::Boolean(lhs_val == rhs_val),
             Infix::LessThan => Object::Boolean(lhs_val < rhs_val),
             Infix::LessOrEqual => Object::Boolean(lhs_val <= rhs_val),
             Infix::GratherThan => Object::Boolean(lhs_val > rhs_val),
             Infix::GratherOrEqual => Object::Boolean(lhs_val >= rhs_val),
             Infix::NotEqual => Object::Boolean(lhs_val != rhs_val),
-            Infix::Remainder => Object::Number(lhs_val % rhs_val),
+        }
+    }
+
+    fn eval_infix_float_expr(&mut self, lhs_val: f64, infix: &Infix, rhs_val: f64) -> Object {
+        match infix {
+            Infix::Plus => Object::Float(lhs_val + rhs_val),
+            Infix::Minus => Object::Float(lhs_val - rhs_val),
+            Infix::Devide => Object::Float(lhs_val / rhs_val),
+            Infix::Multiply => Object::Float(lhs_val * rhs_val),
+            Infix::Remainder => Object::Float(lhs_val % rhs_val),
+            Infix::Equal => Object::Boolean(lhs_val == rhs_val),
+            Infix::LessThan => Object::Boolean(lhs_val < rhs_val),
+            Infix::LessOrEqual => Object::Boolean(lhs_val <= rhs_val),
+            Infix::GratherThan => Object::Boolean(lhs_val > rhs_val),
+            Infix::GratherOrEqual => Object::Boolean(lhs_val >= rhs_val),
+            Infix::NotEqual => Object::Boolean(lhs_val != rhs_val),
         }
     }
 
@@ -374,9 +399,10 @@ impl<'a> Evaluator<'a> {
     fn eval_literal_expr(&mut self, literal: &Literal) -> Object {
         match literal {
             Literal::String(val) => Object::String(val.clone()),
-            Literal::Number(val) => Object::Number(*val as f64),
             Literal::Boolean(val) => Object::Boolean(*val),
             Literal::Null => Object::Null,
+            Literal::Int(val) => Object::Int(*val),
+            Literal::Float(val) => Object::Float(*val),
         }
     }
 

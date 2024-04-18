@@ -31,7 +31,8 @@ fn eval_repl_line(line: String, env: &mut Environment) {
     }
 
     match evaluated.clone().unwrap() {
-        Object::Number(val) => println!("{val}"),
+        Object::Int(val) => println!("{val}"),
+        Object::Float(val) => println!("{val}"),
         Object::String(val) => println!("\"{val}\""),
         Object::BuiltInFunction(_) => println!("[Builtin Function]"),
         Object::Null => println!("null"),

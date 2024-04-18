@@ -1,0 +1,22 @@
+print("Hello, World!")
+
+define sayHelloTo(name: string): null {
+  print("Hello, ", name)
+}
+
+sayHelloTo("Edilson")
+
+let x = 34
+let y: int = 35
+
+define sumTwoInts(x: int, y: int): int {
+  return x + y
+}
+
+print(x, " + ", y, " = ", sumTwoInts(x, y))
+
+for x in range(0, 10) {
+  if (x % 2 == 0) {
+    print(x)
+  }
+}

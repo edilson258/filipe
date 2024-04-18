@@ -30,8 +30,9 @@ pub enum Token {
     DoublePlus,
     DoubleMinus,
 
+    Int(i64),
+    Float(f64),
     String(String),
-    Number(f64),
     True,
     False,
 
@@ -45,9 +46,10 @@ pub enum Token {
     For,
     In,
 
-    StringType,
-    BooleanType,
-    NumberType,
+    TypeInt,
+    TypeFloat,
+    TypeString,
+    TypeBoolean,
 }
 
 impl fmt::Display for Token {
@@ -64,7 +66,6 @@ impl fmt::Display for Token {
             Self::Asterisk => write!(f, "*"),
             Self::Slash => write!(f, "/"),
             Self::String(val) => write!(f, "{}", val),
-            Self::Number(val) => write!(f, "{}", val),
             Self::Identifier(name) => write!(f, "{}", name),
             Self::Let => write!(f, "let"),
             Self::Equal => write!(f, "="),
@@ -81,9 +82,8 @@ impl fmt::Display for Token {
             Self::LessOrEqual => write!(f, "<="),
             Self::Null => write!(f, "null"),
             Self::Colon => write!(f, ":"),
-            Self::StringType => write!(f, "[Type Annotation] string"),
-            Self::NumberType => write!(f, "[Type Annotation] number"),
-            Self::BooleanType => write!(f, "[Type Annotation] boolean"),
+            Self::TypeString => write!(f, "[Type Annotation] string"),
+            Self::TypeBoolean => write!(f, "[Type Annotation] boolean"),
             Self::If => write!(f, "if"),
             Self::Else => write!(f, "else"),
             Self::Bang => write!(f, "!"),
@@ -93,6 +93,10 @@ impl fmt::Display for Token {
             Self::Percet => write!(f, "%"),
             Self::For => write!(f, "for"),
             Self::In => write!(f, "in"),
+            Self::TypeInt => write!(f, "[Type Annotation] int"),
+            Self::TypeFloat => write!(f, "[Type Annotation] float"),
+            Self::Int(val) => write!(f, "{}", val),
+            Self::Float(val) => write!(f, "{}", val),
         }
     }
 }

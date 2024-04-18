@@ -6,8 +6,9 @@ pub type BlockStmt = Vec<Stmt>;
 #[derive(Debug, Clone)]
 pub enum ExprType {
     Null,
+    Int,
+    Float,
     String,
-    Number,
     Boolean,
 }
 
@@ -16,8 +17,9 @@ pub struct Identifier(pub String);
 
 #[derive(Debug, Clone)]
 pub enum Literal {
+    Int(i64),
+    Float(f64),
     String(String),
-    Number(f64),
     Boolean(bool),
     Null,
 }

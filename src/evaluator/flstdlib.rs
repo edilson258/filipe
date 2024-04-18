@@ -75,7 +75,8 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
 fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     for arg in args {
         match &arg.value {
-            Object::Number(val) => print!("{}", val),
+            Object::Int(val) => print!("{}", val),
+            Object::Float(val) => print!("{}", val),
             Object::String(val) => print!("{}", val),
             Object::Null => print!("null"),
             Object::BuiltInFunction(_) => print!("[Builtin Function]"),
@@ -104,7 +105,7 @@ fn filipe_len(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     }
 
     match args[0].value.clone() {
-        Object::String(val) => BuiltInFuncReturnValue::Object(Object::Number(val.len() as f64)),
+        Object::String(val) => BuiltInFuncReturnValue::Object(Object::Int(val.len() as i64)),
         _ => BuiltInFuncReturnValue::Error(RuntimeError {
             kind: ErrorKind::TypeError,
             msg: format!("'len' only accepts iterable types"),
@@ -136,7 +137,7 @@ fn filipe_range(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
         });
     }
 
-    if args[0].type_ != Type::Number || args[1].type_ != Type::Number {
+    if args[0].type_ != Type::Int || args[1].type_ != Type::Int {
         return BuiltInFuncReturnValue::Error({
             RuntimeError {
                 kind: ErrorKind::TypeError,
@@ -146,12 +147,12 @@ fn filipe_range(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     }
 
     let start = match args[0].value {
-        Object::Number(x) => x as i64,
+        Object::Int(x) => x,
         _ => 0,
     };
 
     let end = match args[1].value {
-        Object::Number(x) => x as i64,
+        Object::Int(x) => x,
         _ => 0,
     };
 

@@ -140,9 +140,10 @@ impl<'a> Parser<'a> {
 
     fn token_to_type(&mut self, token: &Token) -> Option<ExprType> {
         match token {
-            Token::StringType => Some(ExprType::String),
-            Token::NumberType => Some(ExprType::Number),
-            Token::BooleanType => Some(ExprType::Boolean),
+            Token::TypeInt => Some(ExprType::Int),
+            Token::TypeFloat => Some(ExprType::Float),
+            Token::TypeString => Some(ExprType::String),
+            Token::TypeBoolean => Some(ExprType::Boolean),
             _ => {
                 self.error_handler.set_not_type_annot_error(token);
                 return None;
@@ -152,10 +153,11 @@ impl<'a> Parser<'a> {
 
     fn parse_type_annot(&mut self) -> Option<ExprType> {
         match self.curr_token {
-            Token::NumberType => Some(ExprType::Number),
-            Token::StringType => Some(ExprType::String),
-            Token::BooleanType => Some(ExprType::Boolean),
             Token::Null => Some(ExprType::Null),
+            Token::TypeInt => Some(ExprType::Int),
+            Token::TypeFloat => Some(ExprType::Float),
+            Token::TypeString => Some(ExprType::String),
+            Token::TypeBoolean => Some(ExprType::Boolean),
             _ => {
                 self.error_handler
                     .set_not_type_annot_error(&self.curr_token);
@@ -220,7 +222,8 @@ impl<'a> Parser<'a> {
         let mut left = match self.curr_token {
             Token::Identifier(_) => self.parse_identifier_expr(),
             Token::String(_) => self.parse_string_expr(),
-            Token::Number(_) => self.parse_number_expr(),
+            Token::Int(_) => self.parse_int_expr(),
+            Token::Float(_) => self.parse_float_expr(),
             Token::True => Some(Expr::Literal(Literal::Boolean(true))),
             Token::False => Some(Expr::Literal(Literal::Boolean(false))),
             Token::Null => Some(Expr::Literal(Literal::Null)),
@@ -273,6 +276,20 @@ impl<'a> Parser<'a> {
             }
         }
         left
+    }
+
+    fn parse_int_expr(&mut self) -> Option<Expr> {
+        match self.curr_token {
+            Token::Int(val) => Some(Expr::Literal(Literal::Int(val))),
+            _ => return None,
+        }
+    }
+
+    fn parse_float_expr(&mut self) -> Option<Expr> {
+        match self.curr_token {
+            Token::Float(val) => Some(Expr::Literal(Literal::Float(val))),
+            _ => return None,
+        }
     }
 
     fn parse_postfix_expr(&mut self, left: Expr) -> Option<Expr> {
@@ -386,13 +403,6 @@ impl<'a> Parser<'a> {
     fn parse_string_expr(&self) -> Option<Expr> {
         match self.curr_token.clone() {
             Token::String(val) => Some(Expr::Literal(Literal::String(val))),
-            _ => None,
-        }
-    }
-
-    fn parse_number_expr(&self) -> Option<Expr> {
-        match self.curr_token.clone() {
-            Token::Number(val) => Some(Expr::Literal(Literal::Number(val))),
             _ => None,
         }
     }
