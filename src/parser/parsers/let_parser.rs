@@ -1,5 +1,5 @@
-use super::{Identifier, Parser, Precedence, Stmt};
-use crate::token::Token;
+use super::super::{Identifier, Parser, Precedence, Stmt};
+use crate::{ast::ExprType, token::Token};
 
 pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
     let ident_name = match p.next_token.clone() {
@@ -16,7 +16,7 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
     if p.next_token_is(&Token::Colon) {
         p.bump();
         let next_token = p.next_token.clone();
-        let ident_type = match p.token_to_type(&next_token) {
+        let ident_type = match token_to_type(p, &next_token) {
             Some(ident_type) => {
                 p.bump();
                 ident_type
@@ -70,4 +70,17 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
     }
 
     Some(Stmt::Let(Identifier(ident_name), None, Some(expr)))
+}
+
+fn token_to_type(p: &mut Parser, token: &Token) -> Option<ExprType> {
+    match token {
+        Token::TypeInt => Some(ExprType::Int),
+        Token::TypeFloat => Some(ExprType::Float),
+        Token::TypeString => Some(ExprType::String),
+        Token::TypeBoolean => Some(ExprType::Boolean),
+        _ => {
+            p.error_handler.set_not_type_annot_error(token);
+            return None;
+        }
+    }
 }

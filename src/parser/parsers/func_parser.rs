@@ -1,4 +1,4 @@
-use super::{ExprType, Identifier, Parser, Stmt};
+use super::super::{ExprType, Identifier, Parser, Stmt};
 use crate::token::Token;
 
 pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
@@ -19,14 +19,14 @@ pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
         Some(params) => params,
         None => return None,
     };
-    
+
     if !p.bump_expected_next(&Token::Colon) {
         return None;
     }
 
     p.bump();
 
-    let ret_type = match p.parse_type_annot() {
+    let ret_type = match parse_type_annot(p) {
         Some(ret_type) => ret_type,
         None => return None,
     };
@@ -60,7 +60,7 @@ fn parse_func_params(p: &mut Parser) -> Option<Vec<(Identifier, ExprType)>> {
     };
     p.bump();
     p.bump();
-    let type_ = match p.parse_type_annot() {
+    let type_ = match parse_type_annot(p) {
         Some(type_) => type_,
         None => return None,
     };
@@ -80,7 +80,7 @@ fn parse_func_params(p: &mut Parser) -> Option<Vec<(Identifier, ExprType)>> {
         };
         p.bump();
         p.bump();
-        let type_ = match p.parse_type_annot() {
+        let type_ = match parse_type_annot(p) {
             Some(type_) => type_,
             None => return None,
         };
@@ -90,4 +90,18 @@ fn parse_func_params(p: &mut Parser) -> Option<Vec<(Identifier, ExprType)>> {
         return None;
     }
     Some(params)
+}
+
+fn parse_type_annot(p: &mut Parser) -> Option<ExprType> {
+    match p.curr_token {
+        Token::Null => Some(ExprType::Null),
+        Token::TypeInt => Some(ExprType::Int),
+        Token::TypeFloat => Some(ExprType::Float),
+        Token::TypeString => Some(ExprType::String),
+        Token::TypeBoolean => Some(ExprType::Boolean),
+        _ => {
+            p.error_handler.set_not_type_annot_error(&p.curr_token);
+            return None;
+        }
+    }
 }

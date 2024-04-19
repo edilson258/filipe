@@ -1,13 +1,14 @@
-mod func_parser;
-mod let_parser;
-mod parser_error_handler;
+mod error_handler;
+mod parsers;
 
+use self::parsers::if_parser::parse_if_stmt;
 use crate::ast::*;
 use crate::lexer::Lexer;
 use crate::token::Token;
-use func_parser::parse_func_stmt;
-use let_parser::parse_let_stmt;
-use parser_error_handler::*;
+use error_handler::*;
+use parsers::forloop_parser::parse_forloop_stmt;
+use parsers::func_parser::parse_func_stmt;
+use parsers::let_parser::parse_let_stmt;
 
 pub struct Parser<'a> {
     l: &'a mut Lexer<'a>,
@@ -53,116 +54,9 @@ impl<'a> Parser<'a> {
             Token::Let => parse_let_stmt(self),
             Token::Func => parse_func_stmt(self),
             Token::Return => self.parse_return_stmt(),
-            Token::If => self.parse_if_stmt(),
-            Token::For => self.parse_forloop_stmt(),
+            Token::If => parse_if_stmt(self),
+            Token::For => parse_forloop_stmt(self),
             _ => self.parse_expr_stmt(),
-        }
-    }
-
-    fn parse_forloop_stmt(&mut self) -> Option<Stmt> {
-        self.bump();
-        let loop_cursor_name = match self.parse_identifier() {
-            Some(identifier) => {
-                let Identifier(name) = identifier;
-                name
-            }
-            None => {
-                self.error_handler.set_identifier_error(&self.curr_token);
-                return None;
-            }
-        };
-
-        if !self.bump_expected_next(&Token::In) {
-            return None;
-        }
-
-        self.bump();
-
-        let iterable = match self.parse_expr(Precedence::Lowest) {
-            Some(expr) => expr,
-            None => return None,
-        };
-        self.bump();
-
-        let block = match self.parse_block_stmt() {
-            Some(block) => block,
-            None => return None,
-        };
-
-        Some(Stmt::ForLoop {
-            cursor: loop_cursor_name,
-            iterable,
-            block,
-        })
-    }
-
-    fn parse_if_stmt(&mut self) -> Option<Stmt> {
-        if !self.bump_expected_next(&Token::Lparen) {
-            return None;
-        }
-
-        self.bump();
-
-        let condition = match self.parse_expr(Precedence::Lowest) {
-            Some(expr) => expr,
-            None => return None,
-        };
-
-        if !self.bump_expected_next(&Token::Rparen) {
-            return None;
-        }
-        self.bump();
-
-        let consequence = match self.parse_block_stmt() {
-            Some(block) => block,
-            None => return None,
-        };
-
-        let alternative: Option<BlockStmt> = match self.next_token_is(&Token::Else) {
-            true => {
-                self.bump();
-                self.bump();
-                self.parse_block_stmt()
-            }
-            false => None,
-        };
-
-        if self.next_token_is(&Token::Semicolon) {
-            self.bump();
-        }
-
-        Some(Stmt::If {
-            condition,
-            consequence,
-            alternative,
-        })
-    }
-
-    fn token_to_type(&mut self, token: &Token) -> Option<ExprType> {
-        match token {
-            Token::TypeInt => Some(ExprType::Int),
-            Token::TypeFloat => Some(ExprType::Float),
-            Token::TypeString => Some(ExprType::String),
-            Token::TypeBoolean => Some(ExprType::Boolean),
-            _ => {
-                self.error_handler.set_not_type_annot_error(token);
-                return None;
-            }
-        }
-    }
-
-    fn parse_type_annot(&mut self) -> Option<ExprType> {
-        match self.curr_token {
-            Token::Null => Some(ExprType::Null),
-            Token::TypeInt => Some(ExprType::Int),
-            Token::TypeFloat => Some(ExprType::Float),
-            Token::TypeString => Some(ExprType::String),
-            Token::TypeBoolean => Some(ExprType::Boolean),
-            _ => {
-                self.error_handler
-                    .set_not_type_annot_error(&self.curr_token);
-                return None;
-            }
         }
     }
 
