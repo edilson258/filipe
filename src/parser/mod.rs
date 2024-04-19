@@ -235,12 +235,6 @@ impl<'a> Parser<'a> {
             }
         };
 
-        /* TODO: ensure that the next expr is sematicly expected
-         * based on the current expr which is `left`, to avoid this:
-         *      print hello -> follwed identifiers
-         *      "foo" "bar" OR 10 10 -> follwed literals
-         */
-
         while !self.next_token_is(&Token::Semicolon) && precedence < self.next_token_precedence() {
             if left.is_none() {
                 return None;
