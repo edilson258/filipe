@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use super::super::object::*;
 use crate::evaluator::environment::Environment;
 use crate::evaluator::type_system::{expr_to_type, object_to_type};
@@ -70,8 +73,8 @@ pub fn eval_call_expr(
         return None;
     }
 
-    let global_scope = e.env.clone();
-    let mut fn_scope = Environment::empty(Some(e.env.clone()));
+    let global_scope = Rc::clone(&e.env);
+    let mut fn_scope = Environment::empty(Some(Rc::clone(&global_scope)));
 
     for (_, (FunctionParam { name, type_ }, object_info)) in
         params.iter().zip(checked_args).enumerate()
@@ -87,7 +90,7 @@ pub fn eval_call_expr(
         fn_scope.add_entry(name.clone(), object_info.value, object_info.type_, true);
     }
 
-    *e.env = fn_scope;
+    e.env = Rc::new(RefCell::new(fn_scope));
     let returned_value = e.eval_block_stmt(&body).unwrap_or(Object::Null);
     let provided_type = object_to_type(&returned_value);
 
@@ -99,6 +102,6 @@ pub fn eval_call_expr(
         return None;
     }
 
-    *e.env = global_scope;
+    e.env = global_scope;
     Some(returned_value)
 }

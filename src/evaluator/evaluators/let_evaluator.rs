@@ -56,7 +56,7 @@ fn eval_let_by_type_inference(e: &mut Evaluator, name: &String, expr: &Expr) {
 }
 
 fn add_to_env(e: &mut Evaluator, name: &String, object: Object, type_: Type) {
-    if !e.env.add_entry(name.clone(), object, type_, true) {
+    if !e.env.borrow_mut().add_entry(name.clone(), object, type_, true) {
         e.error_handler
             .set_name_error(format!("'{}' is already declared", name));
     }

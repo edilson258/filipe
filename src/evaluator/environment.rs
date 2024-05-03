@@ -2,21 +2,16 @@ use super::{
     object::{Object, ObjectInfo},
     type_system::Type,
 };
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct Environment {
     store: HashMap<String, ObjectInfo>,
-    parent: Option<Box<Environment>>,
+    parent: Option<Rc<RefCell<Environment>>>,
 }
 
 impl Environment {
-    pub fn empty(parent: Option<Environment>) -> Self {
-        let parent = match parent {
-            Some(parent) => Some(Box::new(parent)),
-            None => None,
-        };
-
+    pub fn empty(parent: Option<Rc<RefCell<Environment>>>) -> Self {
         Self {
             store: HashMap::new(),
             parent,
@@ -25,7 +20,7 @@ impl Environment {
 
     pub fn from(store: HashMap<String, ObjectInfo>, parent: Option<Environment>) -> Self {
         let parent = match parent {
-            Some(parent) => Some(Box::new(parent)),
+            Some(parent) => Some(Rc::new(RefCell::new(parent))),
             None => None,
         };
         Self { store, parent }
@@ -55,7 +50,12 @@ impl Environment {
     pub fn update_entry(&mut self, name: &str, value: Object) -> bool {
         let old_entry = match self.store.get_mut(name) {
             Some(object_info) => object_info,
-            None => return false,
+            None => {
+                return match self.parent {
+                    Some(ref parent) => parent.borrow_mut().update_entry(name, value),
+                    None => false,
+                }
+            }
         };
         if !old_entry.is_assignable {
             return false;
@@ -70,7 +70,7 @@ impl Environment {
             return Some(obj);
         }
         return match &self.parent {
-            Some(parent) => parent.resolve(name),
+            Some(ref parent) => parent.borrow().resolve(name),
             None => None,
         };
     }
@@ -80,12 +80,12 @@ impl Environment {
             return true;
         }
         return match &self.parent {
-            Some(parent) => parent.is_declared(name),
+            Some(ref parent) => parent.borrow().is_declared(name),
             None => false,
         };
     }
 
-    pub fn get_typeof(&mut self, name: &str) -> Option<Type> {
+    pub fn get_typeof(&self, name: &str) -> Option<Type> {
         if !self.is_declared(name) {
             return None;
         }

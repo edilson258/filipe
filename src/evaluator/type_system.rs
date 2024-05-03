@@ -45,7 +45,7 @@ pub fn has_same_type(lhs: &Object, rhs: &Object) -> bool {
 pub fn identifier_to_type(e: &mut Evaluator, identifier: &Identifier) -> Option<Type> {
     let Identifier(name) = identifier;
 
-    match e.env.get_typeof(&name) {
+    match e.env.borrow().get_typeof(&name) {
         Some(type_) => Some(type_),
         None => {
             e.error_handler

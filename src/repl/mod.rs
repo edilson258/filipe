@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use crate::evaluator::environment::Environment;
 use crate::evaluator::flstdlib::builtins;
 use crate::evaluator::object::Object;
@@ -7,7 +10,7 @@ use crate::parser::Parser;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 
-fn eval_repl_line(line: String, env: &mut Environment) {
+fn eval_repl_line(line: String, env: Rc<RefCell<Environment>>) {
     if line == String::from(".help") {
         println!("We only support arthimetics for now");
         return;
@@ -54,14 +57,14 @@ pub fn repl() {
     println!("Type \".help\" for more information.");
 
     let mut rl = DefaultEditor::new().unwrap();
-    let mut env = Environment::from(builtins(), None);
+    let env = Rc::new(RefCell::new(Environment::from(builtins(), None)));
 
     loop {
         let readline = rl.readline(">> ");
         match readline {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
-                eval_repl_line(line, &mut env);
+                eval_repl_line(line, Rc::clone(&env));
             }
             Err(ReadlineError::Interrupted) => {
                 println!("Exiting...");
