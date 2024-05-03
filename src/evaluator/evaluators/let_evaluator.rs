@@ -1,4 +1,7 @@
-use crate::evaluator::{object_to_type, type_system::expr_type_to_object_type, Evaluator, Expr, ExprType, Identifier, Object, Type};
+use crate::evaluator::{
+    object_to_type, type_system::expr_type_to_object_type, Evaluator, Expr, ExprType, Identifier,
+    Object, Type,
+};
 
 pub fn eval_let_stmt(
     e: &mut Evaluator,
@@ -31,6 +34,15 @@ pub fn eval_let_stmt(
         Some(evaluated_expr) => evaluated_expr,
         None => return,
     };
+
+    if provided_type != object_to_type(&evaluated_expr) {
+        e.error_handler.set_type_error(format!(
+            "assigning value of type {} to variable '{name}' which has type {provided_type}",
+            object_to_type(&evaluated_expr)
+        ));
+        return;
+    }
+
     add_to_env(e, name, evaluated_expr, provided_type);
 }
 
