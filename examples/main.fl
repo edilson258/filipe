@@ -17,14 +17,14 @@ define sumTwoInts(x: int, y: int): int {
 print("34 + 35 = ", sumTwoInts(x, y))
 
 for x in range(0, 10) {
-  if (x % 2 == 0) {
+  if x % 2 == 0 {
     print(x, " is even")
   } else {
     print(x, " is odd")
   }
 }
 
-if ("hello" == "hell0") {
+if "hello" == "hell0" {
   print("hello and hell0 are equal")
 }
 

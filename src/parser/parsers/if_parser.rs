@@ -5,10 +5,6 @@ use crate::{
 };
 
 pub fn parse_if_stmt(p: &mut Parser) -> Option<Stmt> {
-    if !p.bump_expected_next(&Token::Lparen) {
-        return None;
-    }
-
     p.bump();
 
     let condition = match p.parse_expr(Precedence::Lowest) {
@@ -16,9 +12,6 @@ pub fn parse_if_stmt(p: &mut Parser) -> Option<Stmt> {
         None => return None,
     };
 
-    if !p.bump_expected_next(&Token::Rparen) {
-        return None;
-    }
     p.bump();
 
     let consequence = match p.parse_block_stmt() {
