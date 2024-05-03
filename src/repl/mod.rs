@@ -1,14 +1,14 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use rustyline::error::ReadlineError;
+use rustyline::DefaultEditor;
+
 use crate::evaluator::environment::Environment;
 use crate::evaluator::flstdlib::builtins;
-use crate::evaluator::object::Object;
 use crate::evaluator::Evaluator;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use rustyline::error::ReadlineError;
-use rustyline::DefaultEditor;
 
 fn eval_repl_line(line: String, env: Rc<RefCell<Environment>>) {
     if line == String::from(".help") {
@@ -33,23 +33,7 @@ fn eval_repl_line(line: String, env: Rc<RefCell<Environment>>) {
         return;
     }
 
-    match evaluated.clone().unwrap() {
-        Object::Int(val) => println!("{val}"),
-        Object::Float(val) => println!("{val}"),
-        Object::String(val) => println!("\"{val}\""),
-        Object::BuiltInFunction(_) => println!("[Builtin Function]"),
-        Object::Null => println!("null"),
-        Object::Boolean(val) => println!("{val}"),
-        Object::Type(val) => println!("{val}"),
-        Object::UserDefinedFunction {
-            name,
-            params: _,
-            body: _,
-            return_type: _,
-        } => println!("[User Defined Function] {name}"),
-        Object::RetVal(val) => println!("{}", val),
-        Object::Range { start: _, end: _ } => println!("{}", evaluated.unwrap())
-    }
+    println!("{}", evaluated.unwrap());
 }
 
 pub fn repl() {
