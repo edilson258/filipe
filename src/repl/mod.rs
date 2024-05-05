@@ -62,16 +62,13 @@ pub fn repl() {
     let mut env = Environment::from(builtins(), None);
 
     loop {
-        let readline = rl.readline(">> ");
+        let readline = rl.readline("|> ");
         match readline {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
                 eval_repl_line(line, &mut env);
             }
-            Err(ReadlineError::Interrupted) => {
-                println!("Exiting...");
-                break;
-            }
+            Err(ReadlineError::Interrupted) |
             Err(ReadlineError::Eof) => {
                 println!("Exiting...");
                 break;
