@@ -106,10 +106,14 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
 }
 
 fn filipe_exit(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
+    if args.is_empty() {
+        std::process::exit(0);
+    }
+
     if args.len() != 1 {
         return BuiltInFuncReturnValue::Error(RuntimeError {
             kind: ErrorKind::ArgumentError,
-            msg: format!("'exit' expects 1 argument but {} were provided", args.len()),
+            msg: format!("'exit' expects 0 or 1 argument but {} were provided", args.len()),
         });
     }
 
@@ -121,7 +125,6 @@ fn filipe_exit(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
         }),
     }
 }
-
 
 fn filipe_len(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     if args.len() != 1 {
