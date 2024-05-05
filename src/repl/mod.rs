@@ -12,6 +12,11 @@ fn eval_repl_line(line: String, env: &mut Environment) {
         println!("We only support arthimetics for now");
         return;
     }
+    
+    if line == String::from("exit()") {
+        println!("Exiting...");
+        std::process::exit(0); 
+    }
 
     let input = line.chars().collect::<Vec<char>>();
     let mut l = Lexer::new(&input);
@@ -35,7 +40,7 @@ fn eval_repl_line(line: String, env: &mut Environment) {
         Object::Float(val) => println!("{val}"),
         Object::String(val) => println!("\"{val}\""),
         Object::BuiltInFunction(_) => println!("[Builtin Function]"),
-        Object::Null => println!("null"),
+        Object::Null => print!(""),
         Object::Boolean(val) => println!("{val}"),
         Object::Type(val) => println!("{val}"),
         Object::UserDefinedFunction {
@@ -57,16 +62,13 @@ pub fn repl() {
     let mut env = Environment::from(builtins(), None);
 
     loop {
-        let readline = rl.readline(">> ");
+        let readline = rl.readline("|> ");
         match readline {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
                 eval_repl_line(line, &mut env);
             }
-            Err(ReadlineError::Interrupted) => {
-                println!("Exiting...");
-                break;
-            }
+            Err(ReadlineError::Interrupted) |
             Err(ReadlineError::Eof) => {
                 println!("Exiting...");
                 break;

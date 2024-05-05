@@ -4,6 +4,7 @@ use core::fmt;
 pub enum ErrorKind {
     NameError,
     TypeError,
+    ArgumentError,
 }
 
 #[derive(Clone)]
@@ -58,6 +59,7 @@ impl fmt::Display for ErrorKind {
         match self {
             Self::NameError => write!(f, "[Name error]"),
             Self::TypeError => write!(f, "[Type Error]"),
+            Self::ArgumentError => write!(f, "[Argument Error]"),
         }
     }
 }

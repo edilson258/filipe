@@ -16,6 +16,15 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     );
 
     builtin_list.insert(
+        "exit".to_string(),
+        ObjectInfo {
+            is_assignable: false,
+            type_: Type::Function,
+            value: Object::BuiltInFunction(filipe_exit),
+        },
+    );    
+
+    builtin_list.insert(
         "len".to_string(),
         ObjectInfo {
             is_assignable: false,
@@ -94,6 +103,27 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     }
     println!();
     BuiltInFuncReturnValue::Object(Object::Null)
+}
+
+fn filipe_exit(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
+    if args.is_empty() {
+        std::process::exit(0);
+    }
+
+    if args.len() != 1 {
+        return BuiltInFuncReturnValue::Error(RuntimeError {
+            kind: ErrorKind::ArgumentError,
+            msg: format!("'exit' expects 0 or 1 argument but {} were provided", args.len()),
+        });
+    }
+
+    match args[0].value.clone() {
+        Object::Int(val) => std::process::exit(val as i32),
+        _ => BuiltInFuncReturnValue::Error(RuntimeError {
+            kind: ErrorKind::ArgumentError,
+            msg: "'exit' only accepts an integer argument".to_string(),
+        }),
+    }
 }
 
 fn filipe_len(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
