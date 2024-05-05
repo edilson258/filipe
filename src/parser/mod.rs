@@ -33,8 +33,16 @@ impl<'a> Parser<'a> {
     }
 
     fn bump(&mut self) {
+        let next_token = self.l.next_token();
+
+        if next_token.is_err() {
+            self.error_handler
+                .set_error(ParserErrorKind::SyntaxError, next_token.err().unwrap());
+            return;
+        }
+
         self.curr_token = self.next_token.clone();
-        self.next_token = self.l.next_token();
+        self.next_token = next_token.unwrap();
     }
 
     pub fn parse(&mut self) -> Program {
@@ -50,6 +58,10 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_stmt(&mut self) -> Option<Stmt> {
+        if self.has_error() {
+            return None;
+        }
+
         match self.curr_token {
             Token::Let => parse_let_stmt(self),
             Token::Func => parse_func_stmt(self),
@@ -113,6 +125,10 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expr(&mut self, precedence: Precedence) -> Option<Expr> {
+        if self.has_error() {
+            return None;
+        }
+
         let mut left = match self.curr_token {
             Token::Identifier(_) => self.parse_identifier_expr(),
             Token::String(_) => self.parse_string_expr(),

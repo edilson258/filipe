@@ -46,10 +46,10 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn next_token(&mut self) -> Token {
+    pub fn next_token(&mut self) -> Result<Token, String> {
         self.skip_whitespace();
         if self.eof() {
-            return Token::Eof;
+            return Ok(Token::Eof);
         }
 
         let token = match self.curr_char {
@@ -111,26 +111,30 @@ impl<'a> Lexer<'a> {
                     Some(Token::Equal)
                 }
             }
-            '"' => Some(self.read_string()),
+            '"' => {
+                let token = self.read_string();
+                self.read_char();
+                return token;
+            },
             _ => None,
         };
 
         if token.is_some() {
             self.read_char();
-            return token.unwrap();
+            return Ok(token.unwrap());
         }
 
         if self.curr_char.is_alphabetic() {
-            return self.read_identifier();
+            return Ok(self.read_identifier());
         }
 
         if self.curr_char.is_numeric() {
-            return self.read_number();
+            return Ok(self.read_number());
         }
 
         let illegal = Token::Illegal(self.curr_char);
         self.read_char();
-        illegal
+        Ok(illegal)
     }
 
     fn read_identifier(&mut self) -> Token {
@@ -155,10 +159,13 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn read_string(&mut self) -> Token {
+    fn read_string(&mut self) -> Result<Token, String> {
         self.read_char();
         let literal = self.chop_while(|x| x != '"');
-        return Token::String(literal);
+        if self.curr_char != '"' {
+            return Err(format!("Unbalanced '\"'"));
+        }
+        Ok(Token::String(literal))
     }
 
     fn read_number(&mut self) -> Token {
@@ -338,7 +345,7 @@ for x in range(1, 10) {
         let input = input.chars().collect::<Vec<char>>();
         let mut lexer = Lexer::new(&input);
         for expected_token in expected_tokens {
-            assert_eq!(expected_token, lexer.next_token());
+            assert_eq!(expected_token, lexer.next_token().unwrap());
         }
     }
 }

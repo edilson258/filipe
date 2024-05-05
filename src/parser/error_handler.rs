@@ -46,6 +46,10 @@ impl ParserErrorHandler {
         false
     }
 
+    pub fn set_error(&mut self, kind: ParserErrorKind, msg: String) {
+        self.error = Some(ParserError { kind, msg });
+    }
+
     pub fn get_error(&self) -> Option<ParserError> {
         if self.error.is_none() {
             return None;
