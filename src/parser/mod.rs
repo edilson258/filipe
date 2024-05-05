@@ -311,6 +311,20 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_type(&mut self) -> Option<ExprType> {
+        match self.curr_token {
+            Token::TypeInt => Some(ExprType::Int),
+            Token::TypeVoid => Some(ExprType::Void),
+            Token::TypeFloat => Some(ExprType::Float),
+            Token::TypeString => Some(ExprType::String),
+            Token::TypeBoolean => Some(ExprType::Boolean),
+            _ => {
+                self.error_handler.set_not_type_annot_error(&self.curr_token);
+                return None;
+            }
+        }
+    }
+
     fn token_to_precedence(token: &Token) -> Precedence {
         match token {
             Token::Plus | Token::Minus => Precedence::Sum,

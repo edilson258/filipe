@@ -3,9 +3,9 @@ use core::fmt;
 pub type Program = Vec<Stmt>;
 pub type BlockStmt = Vec<Stmt>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprType {
-    Null,
+    Void,
     Int,
     Float,
     String,

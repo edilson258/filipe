@@ -1,6 +1,6 @@
 print("Hello, World!")
 
-define sayHelloTo(name: string): null {
+define sayHelloTo(name: string): void {
   print("Hello, ", name)
 }
 

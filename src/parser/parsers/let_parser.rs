@@ -1,39 +1,36 @@
 use super::super::{Identifier, Parser, Precedence, Stmt};
-use crate::{ast::ExprType, token::Token};
+use crate::{ast::ExprType, parser::ParserErrorKind, token::Token};
 
 pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
-    let ident_name = match p.next_token.clone() {
-        Token::Identifier(val) => {
-            p.bump();
-            val
-        }
+    p.bump();
+
+    let var_name = match p.curr_token.clone() {
+        Token::Identifier(val) => val,
         _ => {
             p.error_handler.set_identifier_error(&p.next_token);
             return None;
         }
     };
+    p.bump();
 
-    if p.next_token_is(&Token::Colon) {
+    if p.current_token_is(&Token::Colon) {
         p.bump();
-        let next_token = p.next_token.clone();
-        let ident_type = match token_to_type(p, &next_token) {
-            Some(ident_type) => {
-                p.bump();
-                ident_type
-            }
+        let var_type = match p.parse_type() {
+            Some(type_) => type_,
             None => return None,
         };
+        p.bump();
 
-        if !p.next_token_is(&Token::Equal) {
-            if p.next_token_is(&Token::Semicolon) {
-                p.bump();
-            }
-            return Some(Stmt::Let(Identifier(ident_name), Some(ident_type), None));
+        if var_type == ExprType::Void {
+            p.error_handler.set_error(
+                ParserErrorKind::SyntaxError,
+                format!("Variable '{}' can't be of type 'void'", &var_name),
+            );
+            return None;
         }
 
-        if !p.bump_expected_next(&Token::Equal) {
-            p.error_handler.set_not_type_annot_error(&next_token);
-            return None;
+        if !p.current_token_is(&Token::Equal) {
+            return Some(Stmt::Let(Identifier(var_name), Some(var_type), None));
         }
 
         p.bump();
@@ -42,20 +39,17 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
             None => return None,
         };
 
-        if p.next_token_is(&Token::Semicolon) {
-            p.bump();
-        }
-
-        return Some(Stmt::Let(
-            Identifier(ident_name),
-            Some(ident_type),
-            Some(expr),
-        ));
+        return Some(Stmt::Let(Identifier(var_name), Some(var_type), Some(expr)));
     }
 
-    if !p.bump_expected_next(&Token::Equal) {
-        let next_token = p.next_token.clone();
-        p.error_handler.set_not_type_annot_error(&next_token);
+    if !p.current_token_is(&Token::Equal) {
+        p.error_handler.set_error(
+            ParserErrorKind::SyntaxError,
+            format!(
+                "Missing type of '{}', provide it's type or initialize it",
+                &var_name
+            ),
+        );
         return None;
     }
 
@@ -65,22 +59,5 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
         None => return None,
     };
 
-    if p.next_token_is(&Token::Semicolon) {
-        p.bump();
-    }
-
-    Some(Stmt::Let(Identifier(ident_name), None, Some(expr)))
-}
-
-fn token_to_type(p: &mut Parser, token: &Token) -> Option<ExprType> {
-    match token {
-        Token::TypeInt => Some(ExprType::Int),
-        Token::TypeFloat => Some(ExprType::Float),
-        Token::TypeString => Some(ExprType::String),
-        Token::TypeBoolean => Some(ExprType::Boolean),
-        _ => {
-            p.error_handler.set_not_type_annot_error(token);
-            return None;
-        }
-    }
+    Some(Stmt::Let(Identifier(var_name), None, Some(expr)))
 }

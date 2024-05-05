@@ -1,6 +1,6 @@
 use super::super::object::*;
 use crate::evaluator::environment::Environment;
-use crate::evaluator::type_system::{expr_to_type, object_to_type};
+use crate::evaluator::type_system::{expr_to_type, object_to_type, Type};
 use crate::evaluator::{Evaluator, Expr, Identifier};
 
 pub fn eval_call_expr(
@@ -76,7 +76,7 @@ pub fn eval_call_expr(
     for (_, (FunctionParam { name, type_ }, object_info)) in
         params.iter().zip(checked_args).enumerate()
     {
-        if *type_ != object_info.type_ {
+        if type_ != &object_info.type_ {
             e.error_handler.set_type_error(format!(
                 "passing argument of type '{}' to parameter of type '{}'",
                 &object_info.type_, type_
@@ -91,7 +91,9 @@ pub fn eval_call_expr(
     let returned_value = e.eval_block_stmt(&body).unwrap_or(Object::Null);
     let provided_type = object_to_type(&returned_value);
 
-    if provided_type != expected_ret_type {
+    if (expected_ret_type != provided_type)
+        && !types_are_equivalents(&expected_ret_type, &provided_type)
+    {
         e.error_handler.set_type_error(format!(
             "function '{}' must return '{}' but found '{}'",
             name, expected_ret_type, provided_type
@@ -101,4 +103,18 @@ pub fn eval_call_expr(
 
     *e.env = global_scope;
     Some(returned_value)
+}
+
+fn types_are_equivalents(lhs: &Type, rhs: &Type) -> bool {
+    match lhs {
+        Type::Void => match rhs {
+            Type::Null => true,
+            _ => false,
+        },
+        Type::Null => match rhs {
+            Type::Void => true,
+            _ => false,
+        },
+        _ => false,
+    }
 }

@@ -119,7 +119,7 @@ impl ParserErrorHandler {
     pub fn set_not_type_annot_error(&mut self, token: &Token) {
         self.error = Some(ParserError {
             kind: ParserErrorKind::SyntaxError,
-            msg: format!("expected type annotation but provided {}", token),
+            msg: format!("Invalid type: {}", token),
         });
     }
 }

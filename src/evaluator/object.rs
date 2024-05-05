@@ -72,6 +72,7 @@ impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Null => write!(f, "null"),
+            Self::Void => write!(f, "void"),
             Self::Int => write!(f, "int"),
             Self::Float => write!(f, "float"),
             Self::Boolean => write!(f, "boolean"),

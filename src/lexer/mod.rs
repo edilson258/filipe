@@ -155,6 +155,7 @@ impl<'a> Lexer<'a> {
             "else" => Token::Else,
             "for" => Token::For,
             "in" => Token::In,
+            "void" => Token::TypeVoid,
             _ => Token::Identifier(literal),
         }
     }

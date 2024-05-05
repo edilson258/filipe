@@ -3,20 +3,21 @@ use super::{object::Object, Evaluator, Expr, ExprType, Identifier, Literal};
 #[derive(PartialEq, Clone, Debug)]
 pub enum Type {
     Null,
+    Void,
     Int,
     Float,
     String,
     Boolean,
     Function,
-    TypeAnnot,
     Range,
+    TypeAnnot,
 }
 
 pub fn expr_type_to_object_type(var_type: &ExprType) -> Type {
     match var_type {
         ExprType::String => Type::String,
         ExprType::Boolean => Type::Boolean,
-        ExprType::Null => Type::Null,
+        ExprType::Void => Type::Void,
         ExprType::Int => Type::Int,
         ExprType::Float => Type::Float,
     }

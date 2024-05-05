@@ -1,8 +1,8 @@
 use super::super::{ExprType, Identifier, Parser, Stmt};
-use crate::token::Token;
+use crate::{parser::ParserErrorKind, token::Token};
 
 pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
-    let fn_ident = match p.next_token.clone() {
+    let fn_identifier = match p.next_token.clone() {
         Token::Identifier(val) => {
             p.bump();
             Identifier(val)
@@ -26,7 +26,7 @@ pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
 
     p.bump();
 
-    let ret_type = match parse_type_annot(p) {
+    let return_type = match p.parse_type() {
         Some(ret_type) => ret_type,
         None => return None,
     };
@@ -41,7 +41,7 @@ pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
     if p.next_token_is(&Token::Semicolon) {
         p.bump();
     }
-    Some(Stmt::Func(fn_ident, fn_params, body, ret_type))
+    Some(Stmt::Func(fn_identifier, fn_params, body, return_type))
 }
 
 fn parse_func_params(p: &mut Parser) -> Option<Vec<(Identifier, ExprType)>> {
@@ -60,12 +60,20 @@ fn parse_func_params(p: &mut Parser) -> Option<Vec<(Identifier, ExprType)>> {
     };
     p.bump();
     p.bump();
-    let type_ = match parse_type_annot(p) {
+    let param_type = match p.parse_type() {
         Some(type_) => type_,
         None => return None,
     };
 
-    params.push((identifier, type_));
+    if param_type == ExprType::Void {
+        p.error_handler.set_error(
+            ParserErrorKind::SyntaxError,
+            format!("Function parameter can't not be of type 'void'"),
+        );
+        return None;
+    }
+
+    params.push((identifier, param_type));
 
     while p.next_token_is(&Token::Comma) {
         p.bump();
@@ -80,28 +88,21 @@ fn parse_func_params(p: &mut Parser) -> Option<Vec<(Identifier, ExprType)>> {
         };
         p.bump();
         p.bump();
-        let type_ = match parse_type_annot(p) {
+        let param_type = match p.parse_type() {
             Some(type_) => type_,
             None => return None,
         };
-        params.push((identifier, type_));
+        if param_type == ExprType::Void {
+            p.error_handler.set_error(
+                ParserErrorKind::SyntaxError,
+                format!("Function parameter can't not be of type 'void'"),
+            );
+            return None;
+        }
+        params.push((identifier, param_type));
     }
     if !p.bump_expected_next(&Token::Rparen) {
         return None;
     }
     Some(params)
-}
-
-fn parse_type_annot(p: &mut Parser) -> Option<ExprType> {
-    match p.curr_token {
-        Token::Null => Some(ExprType::Null),
-        Token::TypeInt => Some(ExprType::Int),
-        Token::TypeFloat => Some(ExprType::Float),
-        Token::TypeString => Some(ExprType::String),
-        Token::TypeBoolean => Some(ExprType::Boolean),
-        _ => {
-            p.error_handler.set_not_type_annot_error(&p.curr_token);
-            return None;
-        }
-    }
 }

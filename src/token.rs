@@ -50,6 +50,7 @@ pub enum Token {
     TypeFloat,
     TypeString,
     TypeBoolean,
+    TypeVoid,
 }
 
 impl fmt::Display for Token {
@@ -97,6 +98,7 @@ impl fmt::Display for Token {
             Self::TypeFloat => write!(f, "[Type Annotation] float"),
             Self::Int(val) => write!(f, "{}", val),
             Self::Float(val) => write!(f, "{}", val),
+            Self::TypeVoid => write!(f, "[Type Annotation] void"),
         }
     }
 }
