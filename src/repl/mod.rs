@@ -12,6 +12,11 @@ fn eval_repl_line(line: String, env: &mut Environment) {
         println!("We only support arthimetics for now");
         return;
     }
+    
+    if line == String::from("exit()") {
+        println!("Exiting...");
+        std::process::exit(0); 
+    }
 
     let input = line.chars().collect::<Vec<char>>();
     let mut l = Lexer::new(&input);
