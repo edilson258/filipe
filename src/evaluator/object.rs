@@ -54,16 +54,16 @@ impl fmt::Display for Object {
             Self::Float(val) => write!(f, "{}", val),
             Self::BuiltInFunction(_) => write!(f, "[Builtin Function]"),
             Self::Null => write!(f, "null"),
+            Self::RetVal(val) => write!(f, "{}", val),
+            Self::Boolean(val) => write!(f, "{}", val),
+            Self::Type(val) => write!(f, "{}", val),
+            Self::Range { start, end } => write!(f, "range({start}, {end})"),
             Self::UserDefinedFunction {
                 name,
                 params: _,
                 body: _,
                 return_type: _,
             } => write!(f, "[User Defined Function] {name}"),
-            Self::RetVal(val) => write!(f, "{}", val),
-            Self::Boolean(val) => write!(f, "{}", val),
-            Self::Type(val) => write!(f, "{}", val),
-            Self::Range { start, end } => write!(f, "range({start}, {end})"),
         }
     }
 }

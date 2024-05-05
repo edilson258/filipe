@@ -5,6 +5,8 @@ pub mod object;
 mod runtime_error;
 mod type_system;
 
+use std::{cell::RefCell, rc::Rc};
+
 use crate::ast::*;
 use environment::Environment;
 use evaluators::func_call_evaluator::eval_call_expr;
@@ -14,13 +16,13 @@ use object::Object;
 use runtime_error::RuntimeErrorHandler;
 use type_system::{has_same_type, object_to_type, Type};
 
-pub struct Evaluator<'a> {
-    env: &'a mut Environment,
+pub struct Evaluator {
+    env: Rc<RefCell<Environment>>,
     pub error_handler: RuntimeErrorHandler,
 }
 
-impl<'a> Evaluator<'a> {
-    pub fn new(env: &'a mut Environment) -> Self {
+impl Evaluator {
+    pub fn new(env: Rc<RefCell<Environment>>) -> Self {
         Self {
             env,
             error_handler: RuntimeErrorHandler::new(),
@@ -92,11 +94,12 @@ impl<'a> Evaluator<'a> {
         end: i64,
         block: &BlockStmt,
     ) -> Option<Object> {
-        let global_scope = self.env.clone();
-        let block_scope = Environment::empty(Some(self.env.clone()));
-        *self.env = block_scope;
 
-        self.env.add_entry(
+        let global_scope = Rc::clone(&self.env);
+        let block_scope = Environment::empty(Some(Rc::clone(&global_scope)));
+        self.env = Rc::new(RefCell::new(block_scope));
+
+        self.env.borrow_mut().add_entry(
             cursor.clone(),
             Object::Int(start),
             Type::Int,
@@ -105,15 +108,15 @@ impl<'a> Evaluator<'a> {
 
         for _ in start..end {
             self.eval_block_stmt(block);
-            let old_val = match self.env.resolve(&cursor).unwrap().value {
+            let old_val = match self.env.borrow().resolve(&cursor).unwrap().value {
                 Object::Int(val) => val,
                 _ => return None,
             };
             self.env
-                .update_entry(&cursor, Object::Int(old_val + 1));
+                .borrow_mut().update_entry(&cursor, Object::Int(old_val + 1));
         }
 
-        *self.env = global_scope;
+        self.env = global_scope;
         None
     }
 
@@ -240,7 +243,7 @@ impl<'a> Evaluator<'a> {
 
     fn eval_assign_expr(&mut self, identifier: &Identifier, expr: &Expr) -> Option<Object> {
         let Identifier(name) = identifier;
-        if !self.env.is_declared(&name) {
+        if !self.env.borrow().is_declared(&name) {
             self.error_handler
                 .set_name_error(format!("'{}' is not declared", &name));
             return None;
@@ -250,7 +253,7 @@ impl<'a> Evaluator<'a> {
             None => return None,
         };
 
-        let old_value_type = self.env.get_typeof(&name).unwrap();
+        let old_value_type = self.env.borrow().get_typeof(&name).unwrap();
         let new_value_type = object_to_type(&value);
 
         if old_value_type != new_value_type {
@@ -261,7 +264,7 @@ impl<'a> Evaluator<'a> {
             return None;
         }
 
-        if !self.env.update_entry(&name, value) {
+        if !self.env.borrow_mut().update_entry(&name, value) {
             self.error_handler
                 .set_name_error(format!("'{}' is not assignable", &name));
         }
@@ -408,7 +411,7 @@ impl<'a> Evaluator<'a> {
 
     fn resolve_identfier(&mut self, identifier: &Identifier) -> Option<Object> {
         let Identifier(name) = identifier;
-        let object = match self.env.resolve(&name) {
+        let object = match self.env.borrow().resolve(&name) {
             Some(object) => object,
             None => {
                 self.error_handler

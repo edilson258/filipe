@@ -30,7 +30,7 @@ pub fn eval_func_def(
     };
     if !e
         .env
-        .add_entry(name.clone(), function_object, Type::Function, false)
+        .borrow_mut().add_entry(name.clone(), function_object, Type::Function, false)
     {
         e.error_handler
             .set_name_error(format!("'{}' is already declared", name));

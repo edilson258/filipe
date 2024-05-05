@@ -9,7 +9,7 @@ mod commands;
 
 use std::{env, process::exit};
 
-use commands::run;
+use commands::run_from_file;
 use repl::repl;
 
 fn main() {
@@ -26,7 +26,7 @@ fn main() {
                 eprintln!("[ERROR]: Missing file path");
                 exit(1);
             }
-            run(&cli_args[2]);
+            run_from_file(&cli_args[2]);
         },
         "build" => {
         },
