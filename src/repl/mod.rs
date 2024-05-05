@@ -35,7 +35,7 @@ fn eval_repl_line(line: String, env: &mut Environment) {
         Object::Float(val) => println!("{val}"),
         Object::String(val) => println!("\"{val}\""),
         Object::BuiltInFunction(_) => println!("[Builtin Function]"),
-        Object::Null => println!("null"),
+        Object::Null => print!(""),
         Object::Boolean(val) => println!("{val}"),
         Object::Type(val) => println!("{val}"),
         Object::UserDefinedFunction {
