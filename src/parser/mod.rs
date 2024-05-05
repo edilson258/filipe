@@ -92,16 +92,10 @@ impl<'a> Parser<'a> {
 
     fn parse_return_stmt(&mut self) -> Option<Stmt> {
         self.bump();
-        if self.current_token_is(&Token::Semicolon) {
-            return Some(Stmt::Return(None));
-        }
         let expr = match self.parse_expr(Precedence::Lowest) {
             Some(expr) => expr,
             None => return None,
         };
-        if self.next_token_is(&Token::Semicolon) {
-            self.bump();
-        }
         Some(Stmt::Return(Some(expr)))
     }
 
@@ -114,12 +108,7 @@ impl<'a> Parser<'a> {
 
     fn parse_expr_stmt(&mut self) -> Option<Stmt> {
         match self.parse_expr(Precedence::Lowest) {
-            Some(expr) => {
-                if self.next_token_is(&Token::Semicolon) {
-                    self.bump();
-                }
-                Some(Stmt::Expr(expr))
-            }
+            Some(expr) => Some(Stmt::Expr(expr)),
             None => None,
         }
     }
@@ -145,7 +134,7 @@ impl<'a> Parser<'a> {
             }
         };
 
-        while !self.next_token_is(&Token::Semicolon) && precedence < self.next_token_precedence() {
+        while precedence < self.next_token_precedence() {
             if left.is_none() {
                 return None;
             }

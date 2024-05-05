@@ -11,7 +11,6 @@ pub enum Token {
     Rbrace,
     Comma,
     Colon,
-    Semicolon,
     
     Plus,
     Minus,
@@ -61,7 +60,6 @@ impl fmt::Display for Token {
             Self::Lparen => write!(f, "("),
             Self::Rparen => write!(f, ")"),
             Self::Comma => write!(f, ","),
-            Self::Semicolon => write!(f, ";"),
             Self::Plus => write!(f, "+"),
             Self::Minus => write!(f, "-"),
             Self::Asterisk => write!(f, "*"),

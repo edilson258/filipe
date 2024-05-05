@@ -28,10 +28,6 @@ pub fn parse_if_stmt(p: &mut Parser) -> Option<Stmt> {
         false => None,
     };
 
-    if p.next_token_is(&Token::Semicolon) {
-        p.bump();
-    }
-
     Some(Stmt::If {
         condition,
         consequence,

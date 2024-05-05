@@ -38,9 +38,6 @@ pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
         Some(block) => block,
         None => return None,
     };
-    if p.next_token_is(&Token::Semicolon) {
-        p.bump();
-    }
     Some(Stmt::Func(fn_identifier, fn_params, body, return_type))
 }
 
