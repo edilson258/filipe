@@ -7,9 +7,42 @@ use crate::parser::Parser;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 
+const REPL_HELPER: &str = r#"
+Helper
+    // define variable
+    let name: string;
+    let name = "Foo";
+    let name: string = "Foo";
+
+    // define function
+    define sum(x: int, y: int): int { return x + y }
+    define sayHello(subject: string): null { print("Hello, ", subject) }
+
+    // if-else statments
+    if true { // do something } else { // do something else }
+    
+    // for loops
+    for counter in range(0, 10) { print(counter) }
+
+    // Built-in functions
+    len("Hello");
+    typeof(10);
+
+    // More: ...
+    // arthimetics: +, -, /, *
+    // postfix: x++, x--
+    // prefix: !x, -x
+    
+    Note: in case of bug:
+       report to: dev.258.edilson@gmail.com
+       open issue: https://github.com/edilson258/filipe
+
+    Happy Hacking!
+"#;
+
 fn eval_repl_line(line: String, env: &mut Environment) {
     if line == String::from(".help") {
-        println!("We only support arthimetics for now");
+        println!("{}", REPL_HELPER);
         return;
     }
     
@@ -36,21 +69,21 @@ fn eval_repl_line(line: String, env: &mut Environment) {
     }
 
     match evaluated.clone().unwrap() {
+        Object::Null => {},
         Object::Int(val) => println!("{val}"),
         Object::Float(val) => println!("{val}"),
         Object::String(val) => println!("\"{val}\""),
-        Object::BuiltInFunction(_) => println!("[Builtin Function]"),
-        Object::Null => print!(""),
         Object::Boolean(val) => println!("{val}"),
         Object::Type(val) => println!("{val}"),
+        Object::RetVal(val) => println!("{}", val),
+        Object::Range { start: _, end: _ } => println!("{}", evaluated.unwrap()),
+        Object::BuiltInFunction(_) => println!("[Builtin Function]"),
         Object::UserDefinedFunction {
             name,
             params: _,
             body: _,
             return_type: _,
         } => println!("[User Defined Function] {name}"),
-        Object::RetVal(val) => println!("{}", val),
-        Object::Range { start: _, end: _ } => println!("{}", evaluated.unwrap())
     }
 }
 
