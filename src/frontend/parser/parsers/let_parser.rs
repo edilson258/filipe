@@ -37,7 +37,7 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
             if !p.bump_expected_current(&Token::LessThan) {
                 return None;
             }
-            let items_type = match p.parse_type() {
+            let generic_type = match p.parse_type() {
                 Some(type_) => type_,
                 None => return None,
             };
@@ -49,22 +49,22 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
             if !p.current_token_is(&Token::Equal) {
                 return Some(Stmt::Let(
                     Identifier(var_name),
-                    Some(items_type),
+                    Some(generic_type),
                     Some(Expr::Literal(Literal::Array(vec![]))),
                     LetStmtFlags { is_array: true },
                 ));
             }
             p.bump();
 
-            let items = match p.parse_array_expr() {
+            let array_expr = match p.parse_array_expr() {
                 Some(items) => items,
                 None => return None,
             };
 
             return Some(Stmt::Let(
                 Identifier(var_name),
-                Some(items_type),
-                Some(items),
+                Some(generic_type),
+                Some(array_expr),
                 LetStmtFlags { is_array: true },
             ));
         }

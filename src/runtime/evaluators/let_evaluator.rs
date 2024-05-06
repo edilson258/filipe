@@ -1,24 +1,25 @@
 use crate::runtime::{
-    object_to_type, type_system::expr_type_to_object_type, Runtime, Expr, ExprType, Identifier,
-    LetStmtFlags, Literal, Object, Type,
+    object_to_type, type_system::expr_type_to_object_type, Expr, ExprType, Identifier,
+    LetStmtFlags, Literal, Object, Runtime, Type,
 };
 
 pub fn eval_let_stmt(
-    e: &mut Runtime,
-    name: &Identifier,
-    expr_type: &Option<ExprType>,
-    expr: &Option<Expr>,
-    flags: &LetStmtFlags,
+    rt: &mut Runtime,
+    identifier: Identifier,
+    expr_type: Option<ExprType>,
+    expr: Option<Expr>,
+    flags: LetStmtFlags,
 ) {
-    let Identifier(name) = name;
+    let Identifier(name) = identifier;
 
-    if e.env.borrow().is_declared(&name) {
-        e.error_handler.set_name_error(format!("'{}' already declared", name));
+    if rt.env.borrow().is_declared(&name) {
+        rt.error_handler
+            .set_name_error(format!("'{}' already declared", name));
         return;
     }
 
     if expr_type.is_none() && expr.is_none() {
-        e.error_handler.set_type_error(format!(
+        rt.error_handler.set_type_error(format!(
             "cannot infer type of '{}', define it's type or initialize it",
             &name
         ));
@@ -26,50 +27,43 @@ pub fn eval_let_stmt(
     }
 
     if flags.is_array {
-        if expr.is_none() {
-            e.error_handler
-                .set_type_error(format!("Missing init value of '{}' array", name));
-            return;
-        }
-
-        eval_array_declaration(e, name, expr_type, expr.to_owned().unwrap());
-        return;
+        return eval_array_declaration(rt, name, expr_type, expr.to_owned().unwrap());
     }
 
     if expr_type.is_none() {
-        eval_let_by_type_inference(e, name, &mut expr.clone().unwrap());
+        eval_let_by_type_inference(rt, name, expr.unwrap());
         return;
     }
 
     let provided_type = expr_type_to_object_type(&expr_type.clone().unwrap());
     if expr.is_none() {
-        add_to_env(e, name, Object::Null, provided_type);
+        add_to_env(rt, &name, Object::Null, provided_type);
         return;
     }
 
-    let evaluated_expr = match e.eval_expr(&mut expr.clone().unwrap()) {
+    let evaluated_expr = match rt.eval_expr(expr.unwrap()) {
         Some(evaluated_expr) => evaluated_expr,
         None => return,
     };
 
     if provided_type != object_to_type(&evaluated_expr) {
-        e.error_handler.set_type_error(format!(
+        rt.error_handler.set_type_error(format!(
             "assigning value of type {} to variable '{name}' which has type {provided_type}",
             object_to_type(&evaluated_expr)
         ));
         return;
     }
 
-    add_to_env(e, name, evaluated_expr, provided_type);
+    add_to_env(rt, &name, evaluated_expr, provided_type);
 }
 
-fn eval_let_by_type_inference(e: &mut Runtime, name: &String, expr: &mut Expr) {
+fn eval_let_by_type_inference(e: &mut Runtime, name: String, expr: Expr) {
     let evaluated_expr = match e.eval_expr(expr) {
         Some(evaluated_expr) => evaluated_expr,
         None => return,
     };
     let infered_type = object_to_type(&evaluated_expr);
-    add_to_env(e, name, evaluated_expr, infered_type);
+    add_to_env(e, &name, evaluated_expr, infered_type);
 }
 
 fn add_to_env(e: &mut Runtime, name: &String, object: Object, type_: Type) {
@@ -85,57 +79,41 @@ fn add_to_env(e: &mut Runtime, name: &String, object: Object, type_: Type) {
 
 fn eval_array_declaration(
     e: &mut Runtime,
-    name: &String,
-    items_type: &Option<ExprType>,
-    init: Expr,
+    name: String,
+    generic_type: Option<ExprType>,
+    array_expr: Expr,
 ) {
-    if items_type.is_some() {
-        let expected_items_type = match expr_type_to_object_type(&items_type.clone().unwrap()) {
-            Type::Array => {
-                e.error_handler
-                    .set_type_error("Nested arrays not allowed".to_string());
-                return;
-            }
-            type_ => type_,
-        };
-
-        let mut expr_array = match init {
-            Expr::Literal(Literal::Array(expr)) => expr,
+    if generic_type.is_none() {
+        let array_literal = match array_expr {
+            Expr::Literal(Literal::Array(items)) => items,
             _ => {
-                e.error_handler
-                    .set_type_error(format!("Array '{}' miss initialized", name));
+                e.error_handler.set_type_error(format!("Invalid '{name}'"));
                 return;
             }
         };
 
-        let array = match e.eval_array_literal(&mut expr_array) {
+        let array_object = match e.eval_array_literal(array_literal) {
             Some(object) => object,
             None => return,
         };
 
-        if let Object::Array(array_data, provided_items_type) = &array {
-            if provided_items_type == &Type::Unknown {
-                add_to_env(e, name, Object::Array(array_data.to_owned(), expected_items_type), Type::Array);
-                return;
-            }
-
-            if provided_items_type != &expected_items_type {
-                e.error_handler.set_type_error(format!(
-                "Defined '{}' to hold values of type '{}' but initialized with values of type '{}'",
-                name, &expected_items_type, &provided_items_type
-            ));
-                return;
-            }
-            add_to_env(e, name, array, Type::Array);
-        } else {
-            e.error_handler
-                .set_type_error(format!("Expected 'Array' but provided '{}'", array))
-        }
+        add_to_env(e, &name, array_object, Type::Array);
         return;
     }
 
-    let array_literal = match init {
-        Expr::Literal(Literal::Array(items)) => items,
+    let generic_type = generic_type.unwrap();
+        
+    let expected_items_type = match expr_type_to_object_type(&generic_type) {
+        Type::Array => {
+            e.error_handler
+                .set_type_error("Nested arrays not allowed".to_string());
+            return;
+        }
+        type_ => type_,
+    };
+
+    let array_literal = match array_expr {
+        Expr::Literal(Literal::Array(array_literal)) => array_literal,
         _ => {
             e.error_handler
                 .set_type_error(format!("Array '{}' miss initialized", name));
@@ -143,10 +121,29 @@ fn eval_array_declaration(
         }
     };
 
-    let array_object = match e.eval_array_literal(&array_literal) {
+    let array_object = match e.eval_array_literal(array_literal) {
         Some(object) => object,
-        None => return
+        None => return,
     };
 
-    add_to_env(e, name, array_object, Type::Array);
+    if let Object::Array(array_data, provided_items_type) = &array_object {
+        if provided_items_type == &Type::Unknown {
+            let array_object = Object::Array(array_data.to_owned(), expected_items_type);
+            add_to_env(e, &name, array_object, Type::Array);
+            return;
+        }
+
+        if provided_items_type != &expected_items_type {
+            e.error_handler.set_type_error(format!(
+                "Defined '{}' to hold values of type '{}' but initialized with values of type '{}'",
+                name, &expected_items_type, &provided_items_type
+            ));
+            return;
+        }
+        add_to_env(e, &name, array_object, Type::Array);
+        return;
+    }
+
+    e.error_handler
+        .set_type_error(format!("Expected 'Array' but provided '{}'", array_object));
 }

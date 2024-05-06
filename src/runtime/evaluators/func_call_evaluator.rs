@@ -8,16 +8,16 @@ use crate::runtime::{Runtime, Expr, Identifier};
 
 pub fn eval_call_expr(
     e: &mut Runtime,
-    func_ident: &Expr,
-    provided_args: &Vec<Expr>,
+    func_ident: Expr,
+    provided_args: Vec<Expr>,
 ) -> Option<Object> {
     let mut checked_args: Vec<ObjectInfo> = vec![];
 
     for arg in provided_args {
-        let arg = match e.eval_expr(arg) {
+        let arg = match e.eval_expr(arg.clone()) {
             Some(object) => ObjectInfo {
                 is_assignable: true,
-                type_: expr_to_type(e, arg).unwrap_or(object_to_type(&object)),
+                type_: expr_to_type(e, &arg).unwrap_or(object_to_type(&object)),
                 value: object,
             },
             None => return None,
@@ -95,7 +95,7 @@ pub fn eval_call_expr(
     let provided_type = object_to_type(&returned_value);
 
     if (expected_ret_type != provided_type)
-        && !types_are_equivalents(&expected_ret_type, &provided_type)
+        && !is_types_equivalents(&expected_ret_type, &provided_type)
     {
         e.error_handler.set_type_error(format!(
             "function '{}' must return '{}' but found '{}'",
@@ -108,7 +108,7 @@ pub fn eval_call_expr(
     Some(returned_value)
 }
 
-fn types_are_equivalents(lhs: &Type, rhs: &Type) -> bool {
+fn is_types_equivalents(lhs: &Type, rhs: &Type) -> bool {
     match lhs {
         Type::Void => match rhs {
             Type::Null => true,
