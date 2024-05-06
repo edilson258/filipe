@@ -5,6 +5,8 @@ pub enum Token {
     Illegal(char),
     Eof,
 
+    Lbracket,
+    Rbracket,
     Lparen,
     Rparen,
     Lbrace,
@@ -35,15 +37,16 @@ pub enum Token {
     True,
     False,
 
-    Identifier(String),
     Let,
-    Func,
-    Return,
-    Null,
     If,
-    Else,
     For,
     In,
+    Else,
+    Func,
+    Null,
+    Return,
+    ClassArray,
+    Identifier(String),
 
     TypeInt,
     TypeFloat,
@@ -59,6 +62,8 @@ impl fmt::Display for Token {
             Self::Eof => write!(f, "EOF"),
             Self::Lparen => write!(f, "("),
             Self::Rparen => write!(f, ")"),
+            Self::Lbracket => write!(f, "["),
+            Self::Rbracket => write!(f, "]"),
             Self::Comma => write!(f, ","),
             Self::Plus => write!(f, "+"),
             Self::Minus => write!(f, "-"),
@@ -97,6 +102,7 @@ impl fmt::Display for Token {
             Self::Int(val) => write!(f, "{}", val),
             Self::Float(val) => write!(f, "{}", val),
             Self::TypeVoid => write!(f, "[Type Annotation] void"),
+            Self::ClassArray => write!(f, "[Built-in Class] Array"),
         }
     }
 }

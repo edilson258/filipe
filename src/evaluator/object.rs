@@ -1,6 +1,7 @@
 use core::fmt;
 
 use super::runtime_error::RuntimeError;
+use super::stdlib::FilipeArray;
 use super::type_system::Type;
 use super::BlockStmt;
 
@@ -26,6 +27,7 @@ pub enum Object {
     Boolean(bool),
     String(String),
     RetVal(Box<Object>),
+    Array(FilipeArray, Type),
     UserDefinedFunction {
         name: String,
         params: FunctionParams,
@@ -64,6 +66,7 @@ impl fmt::Display for Object {
                 body: _,
                 return_type: _,
             } => write!(f, "[User Defined Function] {name}"),
+            Self::Array(array, _) => write!(f, "{}", array),
         }
     }
 }
@@ -80,6 +83,7 @@ impl fmt::Display for Type {
             Self::Function => write!(f, "function"),
             Self::TypeAnnot => write!(f, "[Type Annotation]"),
             Self::Range => write!(f, "{}", self),
+            Self::Array => write!(f, "Array"),
         }
     }
 }

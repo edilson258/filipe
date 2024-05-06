@@ -99,6 +99,7 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
             Object::Boolean(val) => print!("{}", val),
             Object::Type(val) => print!("{}", val),
             Object::Range { start: _, end: _ } => print!("{}", &arg.value),
+            Object::Array(array, _) => print!("{}", array),
         }
     }
     println!();

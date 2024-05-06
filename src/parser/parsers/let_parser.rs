@@ -1,5 +1,9 @@
 use super::super::{Identifier, Parser, Precedence, Stmt};
-use crate::{ast::ExprType, parser::ParserErrorKind, token::Token};
+use crate::{
+    ast::{Expr, ExprType, LetStmtFlags, Literal},
+    parser::ParserErrorKind,
+    token::Token,
+};
 
 pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
     p.bump();
@@ -29,8 +33,49 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
             return None;
         }
 
+        if var_type == ExprType::Array {
+            if !p.bump_expected_current(&Token::LessThan) {
+                return None;
+            }
+            let items_type = match p.parse_type() {
+                Some(type_) => type_,
+                None => return None,
+            };
+            p.bump();
+            if !p.bump_expected_current(&Token::GratherThan) {
+                return None;
+            }
+
+            if !p.current_token_is(&Token::Equal) {
+                return Some(Stmt::Let(
+                    Identifier(var_name),
+                    Some(items_type),
+                    Some(Expr::Literal(Literal::Array(vec![]))),
+                    LetStmtFlags { is_array: true },
+                ));
+            }
+            p.bump();
+
+            let items = match p.parse_array_expr() {
+                Some(items) => items,
+                None => return None,
+            };
+
+            return Some(Stmt::Let(
+                Identifier(var_name),
+                Some(items_type),
+                Some(items),
+                LetStmtFlags { is_array: true },
+            ));
+        }
+
         if !p.current_token_is(&Token::Equal) {
-            return Some(Stmt::Let(Identifier(var_name), Some(var_type), None));
+            return Some(Stmt::Let(
+                Identifier(var_name),
+                Some(var_type),
+                None,
+                LetStmtFlags { is_array: false },
+            ));
         }
 
         p.bump();
@@ -39,7 +84,12 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
             None => return None,
         };
 
-        return Some(Stmt::Let(Identifier(var_name), Some(var_type), Some(expr)));
+        return Some(Stmt::Let(
+            Identifier(var_name),
+            Some(var_type),
+            Some(expr),
+            LetStmtFlags { is_array: false },
+        ));
     }
 
     if !p.current_token_is(&Token::Equal) {
@@ -59,5 +109,10 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
         None => return None,
     };
 
-    Some(Stmt::Let(Identifier(var_name), None, Some(expr)))
+    Some(Stmt::Let(
+        Identifier(var_name),
+        None,
+        Some(expr),
+        LetStmtFlags { is_array: false },
+    ))
 }

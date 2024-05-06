@@ -127,6 +127,7 @@ impl<'a> Parser<'a> {
             Token::False => Some(Expr::Literal(Literal::Boolean(false))),
             Token::Null => Some(Expr::Literal(Literal::Null)),
             Token::Bang | Token::Plus | Token::Minus => self.parse_prefix_expr(),
+            Token::Lbracket => self.parse_array_expr(),
             _ => {
                 let token = self.curr_token.clone();
                 self.error_handler.set_unexpexted_token_error(&token);
@@ -280,7 +281,7 @@ impl<'a> Parser<'a> {
                 None => return None,
             }
         }
-        if !self.bump_expected_next(&Token::Rparen) {
+        if !self.bump_expected_next(&stop) {
             return None;
         }
         Some(list)
@@ -300,6 +301,14 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_array_expr(&mut self) -> Option<Expr> {
+        let items = match self.parse_expr_list(Token::Rbracket) {
+            Some(items) => items,
+            None => return None,
+        };
+        return Some(Expr::Literal(Literal::Array(items)));
+    }
+
     fn parse_type(&mut self) -> Option<ExprType> {
         match self.curr_token {
             Token::TypeInt => Some(ExprType::Int),
@@ -307,8 +316,10 @@ impl<'a> Parser<'a> {
             Token::TypeFloat => Some(ExprType::Float),
             Token::TypeString => Some(ExprType::String),
             Token::TypeBoolean => Some(ExprType::Boolean),
+            Token::ClassArray => Some(ExprType::Array),
             _ => {
-                self.error_handler.set_not_type_annot_error(&self.curr_token);
+                self.error_handler
+                    .set_not_type_annot_error(&self.curr_token);
                 return None;
             }
         }
@@ -337,6 +348,16 @@ impl<'a> Parser<'a> {
 
     fn next_token_precedence(&self) -> Precedence {
         Self::token_to_precedence(&self.next_token)
+    }
+
+    fn bump_expected_current(&mut self, token: &Token) -> bool {
+        if self.current_token_is(token) {
+            self.bump();
+            return true;
+        }
+        self.error_handler
+            .set_expected_but_provided_error(token, &self.curr_token);
+        false
     }
 
     fn bump_expected_next(&mut self, token: &Token) -> bool {

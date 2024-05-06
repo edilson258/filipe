@@ -10,6 +10,7 @@ pub enum Type {
     Boolean,
     Function,
     Range,
+    Array,
     TypeAnnot,
 }
 
@@ -20,6 +21,7 @@ pub fn expr_type_to_object_type(var_type: &ExprType) -> Type {
         ExprType::Void => Type::Void,
         ExprType::Int => Type::Int,
         ExprType::Float => Type::Float,
+        ExprType::Array => Type::Array,
     }
 }
 
@@ -31,6 +33,7 @@ pub fn expr_to_type(e: &mut Evaluator, expr: &Expr) -> Option<Type> {
             Literal::Boolean(_) => return Some(Type::Boolean),
             Literal::Int(_) => return Some(Type::Int),
             Literal::Float(_) => return Some(Type::Float),
+            Literal::Array(_) => return Some(Type::Array),
         },
         Expr::Identifier(identifier) => return identifier_to_type(e, identifier),
         _ => {
@@ -73,5 +76,6 @@ pub fn object_to_type(object: &Object) -> Type {
         Object::Range { start: _, end: _ } => Type::Range,
         Object::Int(_) => Type::Int,
         Object::Float(_) => Type::Float,
+        Object::Array(_, _) => Type::Array,
     }
 }

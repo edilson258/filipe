@@ -5,8 +5,9 @@ pub type BlockStmt = Vec<Stmt>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprType {
-    Void,
     Int,
+    Void,
+    Array,
     Float,
     String,
     Boolean,
@@ -17,11 +18,12 @@ pub struct Identifier(pub String);
 
 #[derive(Debug, Clone)]
 pub enum Literal {
+    Null,
     Int(i64),
     Float(f64),
     String(String),
     Boolean(bool),
-    Null,
+    Array(Vec<Expr>),
 }
 
 #[derive(Debug, Clone)]
@@ -36,9 +38,14 @@ pub enum Expr {
 }
 
 #[derive(Debug, Clone)]
+pub struct LetStmtFlags {
+    pub is_array: bool,
+}
+
+#[derive(Debug, Clone)]
 pub enum Stmt {
     Expr(Expr),
-    Let(Identifier, Option<ExprType>, Option<Expr>),
+    Let(Identifier, Option<ExprType>, Option<Expr>, LetStmtFlags),
     Func(Identifier, Vec<(Identifier, ExprType)>, BlockStmt, ExprType),
     Return(Option<Expr>),
     If {

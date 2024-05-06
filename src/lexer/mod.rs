@@ -57,6 +57,8 @@ impl<'a> Lexer<'a> {
             ')' => Some(Token::Rparen),
             '{' => Some(Token::Lbrace),
             '}' => Some(Token::Rbrace),
+            '[' => Some(Token::Lbracket),
+            ']' => Some(Token::Rbracket),
             ',' => Some(Token::Comma),
             '*' => Some(Token::Asterisk),
             '/' => Some(Token::Slash),
@@ -155,6 +157,7 @@ impl<'a> Lexer<'a> {
             "for" => Token::For,
             "in" => Token::In,
             "void" => Token::TypeVoid,
+            "Array" => Token::ClassArray,
             _ => Token::Identifier(literal),
         }
     }

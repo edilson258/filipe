@@ -3,10 +3,12 @@ mod evaluators;
 pub mod flstdlib;
 pub mod object;
 mod runtime_error;
+mod stdlib;
 mod type_system;
 
 use std::{cell::RefCell, rc::Rc};
 
+use stdlib::FilipeArray;
 use crate::ast::*;
 use environment::Environment;
 use evaluators::func_call_evaluator::eval_call_expr;
@@ -44,8 +46,8 @@ impl Evaluator {
 
     fn eval_stmt(&mut self, stmt: &Stmt) -> Option<Object> {
         match stmt {
-            Stmt::Let(name, var_type, expr) => {
-                eval_let_stmt(self, name, var_type, expr);
+            Stmt::Let(name, var_type, expr, flags) => {
+                eval_let_stmt(self, name, var_type, expr, flags);
                 None
             }
             Stmt::Func(identifier, params, body, ret_type) => {
@@ -94,17 +96,13 @@ impl Evaluator {
         end: i64,
         block: &BlockStmt,
     ) -> Option<Object> {
-
         let global_scope = Rc::clone(&self.env);
         let block_scope = Environment::empty(Some(Rc::clone(&global_scope)));
         self.env = Rc::new(RefCell::new(block_scope));
 
-        self.env.borrow_mut().add_entry(
-            cursor.clone(),
-            Object::Int(start),
-            Type::Int,
-            true,
-        );
+        self.env
+            .borrow_mut()
+            .add_entry(cursor.clone(), Object::Int(start), Type::Int, true);
 
         for _ in start..end {
             self.eval_block_stmt(block);
@@ -113,7 +111,8 @@ impl Evaluator {
                 _ => return None,
             };
             self.env
-                .borrow_mut().update_entry(&cursor, Object::Int(old_val + 1));
+                .borrow_mut()
+                .update_entry(&cursor, Object::Int(old_val + 1));
         }
 
         self.env = global_scope;
@@ -153,7 +152,7 @@ impl Evaluator {
 
     fn eval_expr(&mut self, expr: &Expr) -> Option<Object> {
         match expr {
-            Expr::Literal(literal) => Some(self.eval_literal_expr(literal)),
+            Expr::Literal(literal) => self.eval_literal_expr(literal),
             Expr::Identifier(identifier) => self.resolve_identfier(identifier),
             Expr::Call(func, args) => eval_call_expr(self, func, args),
             Expr::Infix(lhs, infix, rhs) => self.eval_infix_expr(lhs, infix, rhs),
@@ -399,14 +398,63 @@ impl Evaluator {
         }
     }
 
-    fn eval_literal_expr(&mut self, literal: &Literal) -> Object {
+    fn eval_literal_expr(&mut self, literal: &Literal) -> Option<Object> {
         match literal {
-            Literal::String(val) => Object::String(val.clone()),
-            Literal::Boolean(val) => Object::Boolean(*val),
-            Literal::Null => Object::Null,
-            Literal::Int(val) => Object::Int(*val),
-            Literal::Float(val) => Object::Float(*val),
+            Literal::String(val) => Some(Object::String(val.clone())),
+            Literal::Boolean(val) => Some(Object::Boolean(*val)),
+            Literal::Null => Some(Object::Null),
+            Literal::Int(val) => Some(Object::Int(*val)),
+            Literal::Float(val) => Some(Object::Float(*val)),
+            Literal::Array(exprs) => self.eval_array_literal(None, exprs),
         }
+    }
+
+    fn eval_array_literal(
+        &mut self,
+        items_type: Option<Type>,
+        expr_array: &Vec<Expr>,
+    ) -> Option<Object> {
+        if items_type.is_none() && expr_array.is_empty() {
+            self.error_handler
+                .set_type_error(format!("Unknown type of array's items"));
+            return None;
+        }
+
+        if expr_array.is_empty() {
+            return Some(Object::Array(FilipeArray::new(vec![]), items_type.unwrap()));
+        }
+
+        let mut expr_array = expr_array.to_owned();
+        let first_item = match self.eval_expr(&expr_array.remove(0)) {
+            Some(object) => object,
+            None => return None,
+        };
+
+        let first_item_type = object_to_type(&first_item);
+
+        if items_type.is_some() && items_type.unwrap() != first_item_type {
+            self.error_handler
+                .set_type_error("Array item's type mismatch".to_string());
+            return None;
+        }
+
+        let mut objects: Vec<Object> = vec![];
+        objects.push(first_item);
+
+        for expr in expr_array {
+            let item = match self.eval_expr(&expr) {
+                Some(obj) => obj,
+                None => return None,
+            };
+
+            if first_item_type != object_to_type(&item) {
+                self.error_handler
+                    .set_type_error("Array item's type mismatch".to_string());
+                return None;
+            }
+            objects.push(item);
+        }
+        Some(Object::Array(FilipeArray::new(objects), first_item_type))
     }
 
     fn resolve_identfier(&mut self, identifier: &Identifier) -> Option<Object> {
