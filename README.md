@@ -11,6 +11,7 @@ Filipe still primitive and limited although it has support for:
 - Native Data types `int`, `float`, `boolean`, `string`, `null`
 - Built-in function `len`, `typeof`, `print`
 - User defined functions
+- Arrays (experimental)
 
 Filipe was design to be a high level programming language and beginner friendly, that why it has a clear syntax and an enhanced error reporting mechanisms.
 
@@ -22,53 +23,30 @@ Filipe was design to be a high level programming language and beginner friendly,
 print("Hello, world!")
 ```
 
-2. for loop and if-else statments
+2. more examples...
 
 ```python
-for c in range(0, 10) {
-  if (c % 2 == 0) {
-    print(c, " is even")
-  } else {
-    print(c, " is odd")
-  }
+let name: string = "Jonh Harvard"
+let age = 87
+let height: float = 1.86
+let favorite_langs = ["Haskell", "Ocaml", "Rust"]
+
+if height >= 1.90 {
+    print(name, " is tall above avg.")
+} else {
+    print(name, " isn't so much tall")
 }
-```
-
-3. more examples...
-
-```python
-define sayHelloTo(name: string): null {
-  print("Hello, ", name)
-}
-
-sayHelloTo("Edilson")
-sayHelloTo("Mom, foo and bar")
-
-let x = 34
-let y: int = 35
-
-define sumTwoInts(x: int, y: int): int {
-  return x + y
-}
-
-print("34 + 35 = ", sumTwoInts(x, y))
 
 for x in range(0, 10) {
-  if x % 2 == 0 {
-    print(x, " is even")
-  } else {
-    print(x, " is odd")
-  }
+    if x % 2 == 0 {
+        print(x, " is even")
+    }
 }
 
-if "hello" == "hell0" {
-  print("hello and hell0 are equal")
-}
+print(name)
+print(height)
+print("Favorite prog. lang.: ", favorite_langs)
 
-print("10 has type ", typeof(10))
-print("10.6 has type ", typeof(10.6))
-
-print("Length of 'Hi Mom' is ", len("Hi Mom"))
 ```
 
 # Try it now
