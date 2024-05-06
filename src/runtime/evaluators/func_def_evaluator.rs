@@ -1,9 +1,9 @@
-use crate::evaluator::object::{FunctionParam, FunctionParams, Object};
-use crate::evaluator::type_system::{expr_type_to_object_type, Type};
-use crate::evaluator::{BlockStmt, Evaluator, ExprType, Identifier};
+use crate::runtime::object::{FunctionParam, FunctionParams, Object};
+use crate::runtime::type_system::{expr_type_to_object_type, Type};
+use crate::runtime::{BlockStmt, Runtime, ExprType, Identifier};
 
 pub fn eval_func_def(
-    e: &mut Evaluator,
+    e: &mut Runtime,
     identifier: &Identifier,
     params: &Vec<(Identifier, ExprType)>,
     body: &BlockStmt,

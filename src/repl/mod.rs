@@ -4,12 +4,12 @@ use std::rc::Rc;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 
-use crate::evaluator::environment::Environment;
-use crate::evaluator::flstdlib::builtins;
-use crate::evaluator::object::Object;
-use crate::evaluator::Evaluator;
-use crate::lexer::Lexer;
-use crate::parser::Parser;
+use crate::runtime::context::Context;
+use crate::runtime::flstdlib::builtins;
+use crate::runtime::object::Object;
+use crate::runtime::Runtime;
+use crate::frontend::lexer::Lexer;
+use crate::frontend::parser::Parser;
 
 const REPL_HELPER: &str = r#"
 Helper
@@ -44,7 +44,7 @@ Helper
     Happy Hacking!
 "#;
 
-fn eval_repl_line(line: String, env: Rc<RefCell<Environment>>) {
+fn eval_repl_line(line: String, env: Rc<RefCell<Context>>) {
     if line == String::from(".help") {
         println!("{}", REPL_HELPER);
         return;
@@ -65,7 +65,7 @@ fn eval_repl_line(line: String, env: Rc<RefCell<Environment>>) {
         return;
     };
 
-    let mut evaltr = Evaluator::new(env);
+    let mut evaltr = Runtime::new(env);
     let evaluated = evaltr.eval(program);
 
     if evaluated.is_none() {
@@ -73,8 +73,8 @@ fn eval_repl_line(line: String, env: Rc<RefCell<Environment>>) {
     }
 
     match evaluated.clone().unwrap() {
-        Object::Null => {},
-        _ => println!("{}", evaluated.unwrap())
+        Object::Null => {}
+        _ => println!("{}", evaluated.unwrap()),
     }
 }
 
@@ -83,7 +83,7 @@ pub fn repl() {
     println!("Type \".help\" for more information.");
 
     let mut rl = DefaultEditor::new().unwrap();
-    let env = Rc::new(RefCell::new(Environment::from(builtins(), None)));
+    let env = Rc::new(RefCell::new(Context::from(builtins(), None)));
 
     loop {
         let readline = rl.readline("|> ");

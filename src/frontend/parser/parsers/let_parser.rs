@@ -1,5 +1,5 @@
 use super::super::{Identifier, Parser, Precedence, Stmt};
-use crate::{
+use super::super::super::{
     ast::{Expr, ExprType, LetStmtFlags, Literal},
     parser::ParserErrorKind,
     token::Token,

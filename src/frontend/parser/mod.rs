@@ -2,9 +2,9 @@ mod error_handler;
 mod parsers;
 
 use self::parsers::if_parser::parse_if_stmt;
-use crate::ast::*;
-use crate::lexer::Lexer;
-use crate::token::Token;
+use super::ast::*;
+use super::lexer::Lexer;
+use super::token::Token;
 use error_handler::*;
 use parsers::forloop_parser::parse_forloop_stmt;
 use parsers::func_parser::parse_func_stmt;

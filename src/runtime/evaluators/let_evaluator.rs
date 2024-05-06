@@ -1,10 +1,10 @@
-use crate::evaluator::{
-    object_to_type, type_system::expr_type_to_object_type, Evaluator, Expr, ExprType, Identifier,
+use crate::runtime::{
+    object_to_type, type_system::expr_type_to_object_type, Runtime, Expr, ExprType, Identifier,
     LetStmtFlags, Literal, Object, Type,
 };
 
 pub fn eval_let_stmt(
-    e: &mut Evaluator,
+    e: &mut Runtime,
     name: &Identifier,
     expr_type: &Option<ExprType>,
     expr: &Option<Expr>,
@@ -63,7 +63,7 @@ pub fn eval_let_stmt(
     add_to_env(e, name, evaluated_expr, provided_type);
 }
 
-fn eval_let_by_type_inference(e: &mut Evaluator, name: &String, expr: &mut Expr) {
+fn eval_let_by_type_inference(e: &mut Runtime, name: &String, expr: &mut Expr) {
     let evaluated_expr = match e.eval_expr(expr) {
         Some(evaluated_expr) => evaluated_expr,
         None => return,
@@ -72,7 +72,7 @@ fn eval_let_by_type_inference(e: &mut Evaluator, name: &String, expr: &mut Expr)
     add_to_env(e, name, evaluated_expr, infered_type);
 }
 
-fn add_to_env(e: &mut Evaluator, name: &String, object: Object, type_: Type) {
+fn add_to_env(e: &mut Runtime, name: &String, object: Object, type_: Type) {
     if !e
         .env
         .borrow_mut()
@@ -84,7 +84,7 @@ fn add_to_env(e: &mut Evaluator, name: &String, object: Object, type_: Type) {
 }
 
 fn eval_array_declaration(
-    e: &mut Evaluator,
+    e: &mut Runtime,
     name: &String,
     items_type: &Option<ExprType>,
     init: Expr,

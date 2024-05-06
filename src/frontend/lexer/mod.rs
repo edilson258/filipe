@@ -1,4 +1,4 @@
-use crate::token::Token;
+use super::token::Token;
 
 const NULL_CHAR: char = '\0';
 
@@ -213,7 +213,7 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 mod tests {
     use super::Lexer;
-    use crate::token::Token;
+    use super::super::token::Token;
 
     #[test]
     fn test_next_token() {

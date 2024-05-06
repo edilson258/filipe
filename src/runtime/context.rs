@@ -5,20 +5,20 @@ use super::{
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone)]
-pub struct Environment {
+pub struct Context {
     store: HashMap<String, ObjectInfo>,
-    parent: Option<Rc<RefCell<Environment>>>,
+    parent: Option<Rc<RefCell<Context>>>,
 }
 
-impl Environment {
-    pub fn empty(parent: Option<Rc<RefCell<Environment>>>) -> Self {
+impl Context {
+    pub fn empty(parent: Option<Rc<RefCell<Context>>>) -> Self {
         Self {
             store: HashMap::new(),
             parent,
         }
     }
 
-    pub fn from(store: HashMap<String, ObjectInfo>, parent: Option<Environment>) -> Self {
+    pub fn from(store: HashMap<String, ObjectInfo>, parent: Option<Context>) -> Self {
         let parent = match parent {
             Some(parent) => Some(Rc::new(RefCell::new(parent))),
             None => None,

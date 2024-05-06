@@ -2,12 +2,12 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::super::object::*;
-use crate::evaluator::environment::Environment;
-use crate::evaluator::type_system::{expr_to_type, object_to_type, Type};
-use crate::evaluator::{Evaluator, Expr, Identifier};
+use crate::runtime::context::Context;
+use crate::runtime::type_system::{expr_to_type, object_to_type, Type};
+use crate::runtime::{Runtime, Expr, Identifier};
 
 pub fn eval_call_expr(
-    e: &mut Evaluator,
+    e: &mut Runtime,
     func_ident: &Expr,
     provided_args: &Vec<Expr>,
 ) -> Option<Object> {
@@ -25,7 +25,7 @@ pub fn eval_call_expr(
         checked_args.push(arg);
     }
 
-    let func_name = match Evaluator::expr_to_identifier(&func_ident) {
+    let func_name = match Runtime::expr_to_identifier(&func_ident) {
         Some(identifier) => {
             let Identifier(name) = identifier;
             name
@@ -74,7 +74,7 @@ pub fn eval_call_expr(
     }
 
     let global_scope = Rc::clone(&e.env);
-    let mut fn_scope = Environment::empty(Some(Rc::clone(&global_scope)));
+    let mut fn_scope = Context::empty(Some(Rc::clone(&global_scope)));
 
     for (_, (FunctionParam { name, type_ }, object_info)) in
         params.iter().zip(checked_args).enumerate()

@@ -1,4 +1,4 @@
-pub mod environment;
+pub mod context;
 mod evaluators;
 pub mod flstdlib;
 pub mod object;
@@ -8,8 +8,8 @@ mod type_system;
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::ast::*;
-use environment::Environment;
+use crate::frontend::ast::*;
+use context::Context;
 use evaluators::func_call_evaluator::eval_call_expr;
 use evaluators::func_def_evaluator::eval_func_def;
 use evaluators::let_evaluator::eval_let_stmt;
@@ -18,13 +18,13 @@ use runtime_error::RuntimeErrorHandler;
 use stdlib::FilipeArray;
 use type_system::{has_same_type, object_to_type, Type};
 
-pub struct Evaluator {
-    env: Rc<RefCell<Environment>>,
+pub struct Runtime {
+    env: Rc<RefCell<Context>>,
     pub error_handler: RuntimeErrorHandler,
 }
 
-impl Evaluator {
-    pub fn new(env: Rc<RefCell<Environment>>) -> Self {
+impl Runtime {
+    pub fn new(env: Rc<RefCell<Context>>) -> Self {
         Self {
             env,
             error_handler: RuntimeErrorHandler::new(),
@@ -97,7 +97,7 @@ impl Evaluator {
         block: &BlockStmt,
     ) -> Option<Object> {
         let global_scope = Rc::clone(&self.env);
-        let block_scope = Environment::empty(Some(Rc::clone(&global_scope)));
+        let block_scope = Context::empty(Some(Rc::clone(&global_scope)));
         self.env = Rc::new(RefCell::new(block_scope));
 
         self.env

@@ -1,4 +1,4 @@
-use super::{object::Object, Evaluator, Expr, ExprType, Identifier, Literal};
+use super::{object::Object, Runtime, Expr, ExprType, Identifier, Literal};
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Type {
@@ -26,7 +26,7 @@ pub fn expr_type_to_object_type(var_type: &ExprType) -> Type {
     }
 }
 
-pub fn expr_to_type(e: &mut Evaluator, expr: &Expr) -> Option<Type> {
+pub fn expr_to_type(e: &mut Runtime, expr: &Expr) -> Option<Type> {
     match expr {
         Expr::Literal(literal) => match literal {
             Literal::String(_) => return Some(Type::String),
@@ -47,7 +47,7 @@ pub fn has_same_type(lhs: &Object, rhs: &Object) -> bool {
     object_to_type(lhs) == object_to_type(rhs)
 }
 
-pub fn identifier_to_type(e: &mut Evaluator, identifier: &Identifier) -> Option<Type> {
+pub fn identifier_to_type(e: &mut Runtime, identifier: &Identifier) -> Option<Type> {
     let Identifier(name) = identifier;
 
     match e.env.borrow().get_typeof(&name) {

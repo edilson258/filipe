@@ -1,5 +1,6 @@
-use super::super::{ExprType, Identifier, Parser, Stmt};
-use crate::{parser::ParserErrorKind, token::Token};
+use crate::frontend::ast::{ExprType, Identifier, Stmt};
+use crate::frontend::parser::{Parser, ParserErrorKind};
+use crate::frontend::token::Token;
 
 pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
     let fn_identifier = match p.next_token.clone() {

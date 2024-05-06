@@ -1,11 +1,8 @@
-mod ast;
-mod evaluator;
-mod lexer;
-mod parser;
-mod token;
-mod utils;
 mod repl;
 mod commands;
+mod frontend;
+mod runtime;
+mod utils;
 
 use std::{env, process::exit};
 

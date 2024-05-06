@@ -2,11 +2,9 @@ use std::cell::RefCell;
 use std::process::exit;
 use std::rc::Rc;
 
-use crate::evaluator::environment::Environment;
-use crate::evaluator::flstdlib::builtins;
-use crate::evaluator::Evaluator;
-use crate::lexer::Lexer;
-use crate::parser::Parser;
+use crate::frontend::lexer::Lexer;
+use crate::frontend::parser::Parser;
+use crate::runtime::{context::Context, flstdlib::builtins, Runtime};
 use crate::utils::read_file;
 
 pub fn run_from_file(path: &str) {
@@ -25,7 +23,7 @@ pub fn run_from_file(path: &str) {
         exit(1);
     };
 
-    let env = Environment::from(builtins(), None);
-    let mut evaltr = Evaluator::new(Rc::new(RefCell::new(env)));
+    let env = Context::from(builtins(), None);
+    let mut evaltr = Runtime::new(Rc::new(RefCell::new(env)));
     evaltr.eval(program);
 }
