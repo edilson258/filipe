@@ -94,7 +94,7 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
 
     if !p.current_token_is(&Token::Equal) {
         p.error_handler.set_error(
-            ParserErrorKind::SyntaxError,
+            ParserErrorKind::TypeError,
             format!(
                 "Missing type of '{}', provide it's type or initialize it",
                 &var_name
@@ -108,6 +108,23 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
         Some(expr) => expr,
         None => return None,
     };
+
+    if let Expr::Literal(Literal::Array(expr_list)) = &expr {
+        if expr_list.len() < 1 {
+            p.error_handler.set_error(
+                ParserErrorKind::TypeError,
+                format!("Unable to infer type of array '{}'", &var_name),
+            );
+            return None;
+        }
+
+        return Some(Stmt::Let(
+            Identifier(var_name),
+            None,
+            Some(expr),
+            LetStmtFlags { is_array: true },
+        ));
+    }
 
     Some(Stmt::Let(
         Identifier(var_name),

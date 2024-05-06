@@ -32,3 +32,11 @@ print("10 has type ", typeof(10))
 print("10.6 has type ", typeof(10.6))
 
 print("Length of 'Hi Mom' is ", len("Hi Mom"))
+
+let xs = [1, 2, 3]
+let ys: Array<int> = []
+ys = [10, 20, 30]
+let zs: Array<boolean> = [true, false]
+zs = [true, true, true, true]
+print(xs, ys, zs)
+zs = []

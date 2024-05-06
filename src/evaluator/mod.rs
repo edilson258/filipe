@@ -8,7 +8,6 @@ mod type_system;
 
 use std::{cell::RefCell, rc::Rc};
 
-use stdlib::FilipeArray;
 use crate::ast::*;
 use environment::Environment;
 use evaluators::func_call_evaluator::eval_call_expr;
@@ -16,6 +15,7 @@ use evaluators::func_def_evaluator::eval_func_def;
 use evaluators::let_evaluator::eval_let_stmt;
 use object::Object;
 use runtime_error::RuntimeErrorHandler;
+use stdlib::FilipeArray;
 use type_system::{has_same_type, object_to_type, Type};
 
 pub struct Evaluator {
@@ -252,12 +252,16 @@ impl Evaluator {
             None => return None,
         };
 
+        if let Some(Object::Array(_, old_items_type)) = self.resolve_identfier(&identifier) {
+            return self.assign_array(name, old_items_type, value);
+        }
+
         let old_value_type = self.env.borrow().get_typeof(&name).unwrap();
         let new_value_type = object_to_type(&value);
 
         if old_value_type != new_value_type {
             self.error_handler.set_type_error(format!(
-                "can't assign value of type '{}' to value of type '{}'",
+                "can't assign value of type '{}' with value of type '{}'",
                 old_value_type, new_value_type
             ));
             return None;
@@ -267,6 +271,32 @@ impl Evaluator {
             self.error_handler
                 .set_name_error(format!("'{}' is not assignable", &name));
         }
+        None
+    }
+
+    fn assign_array(&mut self, name: &String, old_type: Type, value: Object) -> Option<Object> {
+        let (new_data, new_type) = match &value {
+            Object::Array(new_data, new_type) => (new_data, new_type),
+            _ => {
+                println!("rhs is not array");
+                return None;
+            }
+        };
+
+        if new_type == &Type::Unknown {
+            self.env.borrow_mut().update_entry(&name, Object::Array(new_data.to_owned(), old_type));
+            return None;
+        }
+
+        if new_type != &old_type {
+            self.error_handler.set_type_error(format!(
+                "Assign array of type '{}' to array '{}' which has type '{}'",
+                new_type, name, old_type
+            ));
+            return None;
+        }
+
+        self.env.borrow_mut().update_entry(&name, value);
         None
     }
 
@@ -405,23 +435,13 @@ impl Evaluator {
             Literal::Null => Some(Object::Null),
             Literal::Int(val) => Some(Object::Int(*val)),
             Literal::Float(val) => Some(Object::Float(*val)),
-            Literal::Array(exprs) => self.eval_array_literal(None, exprs),
+            Literal::Array(exprs) => self.eval_array_literal(exprs),
         }
     }
 
-    fn eval_array_literal(
-        &mut self,
-        items_type: Option<Type>,
-        expr_array: &Vec<Expr>,
-    ) -> Option<Object> {
-        if items_type.is_none() && expr_array.is_empty() {
-            self.error_handler
-                .set_type_error(format!("Unknown type of array's items"));
-            return None;
-        }
-
+    fn eval_array_literal(&mut self, expr_array: &Vec<Expr>) -> Option<Object> {
         if expr_array.is_empty() {
-            return Some(Object::Array(FilipeArray::new(vec![]), items_type.unwrap()));
+            return Some(Object::Array(FilipeArray::new(vec![]), Type::Unknown));
         }
 
         let mut expr_array = expr_array.to_owned();
@@ -431,12 +451,6 @@ impl Evaluator {
         };
 
         let first_item_type = object_to_type(&first_item);
-
-        if items_type.is_some() && items_type.unwrap() != first_item_type {
-            self.error_handler
-                .set_type_error("Array item's type mismatch".to_string());
-            return None;
-        }
 
         let mut objects: Vec<Object> = vec![];
         objects.push(first_item);

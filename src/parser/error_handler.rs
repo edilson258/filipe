@@ -8,12 +8,15 @@ use crate::{
 #[derive(Clone)]
 pub enum ParserErrorKind {
     SyntaxError,
+    TypeError,
 }
 
 impl fmt::Display for ParserErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
+        match self {
             ParserErrorKind::SyntaxError => write!(f, "[Syntax Error]"),
+            ParserErrorKind::TypeError => write!(f, "[Type Error]")
+            
         }
     }
 }

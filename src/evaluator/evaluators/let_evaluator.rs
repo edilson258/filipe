@@ -12,6 +12,11 @@ pub fn eval_let_stmt(
 ) {
     let Identifier(name) = name;
 
+    if e.env.borrow().is_declared(&name) {
+        e.error_handler.set_name_error(format!("'{}' already declared", name));
+        return;
+    }
+
     if expr_type.is_none() && expr.is_none() {
         e.error_handler.set_type_error(format!(
             "cannot infer type of '{}', define it's type or initialize it",
@@ -21,23 +26,13 @@ pub fn eval_let_stmt(
     }
 
     if flags.is_array {
-        if expr_type.is_none() {
-            e.error_handler
-                .set_type_error(format!("Missing items type of '{}' array", name));
-            return;
-        }
         if expr.is_none() {
             e.error_handler
                 .set_type_error(format!("Missing init value of '{}' array", name));
             return;
         }
 
-        eval_array_declaration(
-            e,
-            name,
-            expr_type.to_owned().unwrap(),
-            expr.to_owned().unwrap(),
-        );
+        eval_array_declaration(e, name, expr_type, expr.to_owned().unwrap());
         return;
     }
 
@@ -88,18 +83,59 @@ fn add_to_env(e: &mut Evaluator, name: &String, object: Object, type_: Type) {
     }
 }
 
-fn eval_array_declaration(e: &mut Evaluator, name: &String, items_type: ExprType, init: Expr) {
-    let items_type = match expr_type_to_object_type(&items_type) {
-        Type::Array => {
-            e.error_handler
-                .set_type_error("Nested arrays not allowed".to_string());
-            return;
-        }
-        type_ => type_,
-    };
+fn eval_array_declaration(
+    e: &mut Evaluator,
+    name: &String,
+    items_type: &Option<ExprType>,
+    init: Expr,
+) {
+    if items_type.is_some() {
+        let expected_items_type = match expr_type_to_object_type(&items_type.clone().unwrap()) {
+            Type::Array => {
+                e.error_handler
+                    .set_type_error("Nested arrays not allowed".to_string());
+                return;
+            }
+            type_ => type_,
+        };
 
-    let mut expr_array = match init {
-        Expr::Literal(Literal::Array(expr)) => expr,
+        let mut expr_array = match init {
+            Expr::Literal(Literal::Array(expr)) => expr,
+            _ => {
+                e.error_handler
+                    .set_type_error(format!("Array '{}' miss initialized", name));
+                return;
+            }
+        };
+
+        let array = match e.eval_array_literal(&mut expr_array) {
+            Some(object) => object,
+            None => return,
+        };
+
+        if let Object::Array(array_data, provided_items_type) = &array {
+            if provided_items_type == &Type::Unknown {
+                add_to_env(e, name, Object::Array(array_data.to_owned(), expected_items_type), Type::Array);
+                return;
+            }
+
+            if provided_items_type != &expected_items_type {
+                e.error_handler.set_type_error(format!(
+                "Defined '{}' to hold values of type '{}' but initialized with values of type '{}'",
+                name, &expected_items_type, &provided_items_type
+            ));
+                return;
+            }
+            add_to_env(e, name, array, Type::Array);
+        } else {
+            e.error_handler
+                .set_type_error(format!("Expected 'Array' but provided '{}'", array))
+        }
+        return;
+    }
+
+    let array_literal = match init {
+        Expr::Literal(Literal::Array(items)) => items,
         _ => {
             e.error_handler
                 .set_type_error(format!("Array '{}' miss initialized", name));
@@ -107,10 +143,10 @@ fn eval_array_declaration(e: &mut Evaluator, name: &String, items_type: ExprType
         }
     };
 
-    let array = match e.eval_array_literal(Some(items_type), &mut expr_array) {
+    let array_object = match e.eval_array_literal(&array_literal) {
         Some(object) => object,
-        None => return,
+        None => return
     };
 
-    add_to_env(e, name, array, Type::Array);
+    add_to_env(e, name, array_object, Type::Array);
 }

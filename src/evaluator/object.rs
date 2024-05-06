@@ -84,6 +84,7 @@ impl fmt::Display for Type {
             Self::TypeAnnot => write!(f, "[Type Annotation]"),
             Self::Range => write!(f, "{}", self),
             Self::Array => write!(f, "Array"),
+            Type::Unknown => write!(f, "[Unknown Type]"),
         }
     }
 }

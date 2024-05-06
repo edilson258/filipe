@@ -12,6 +12,7 @@ pub enum Type {
     Range,
     Array,
     TypeAnnot,
+    Unknown,
 }
 
 pub fn expr_type_to_object_type(var_type: &ExprType) -> Type {
