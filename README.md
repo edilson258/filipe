@@ -29,7 +29,7 @@ print("Hello, world!")
 let name: string = "Jonh Harvard"
 let age = 87
 let height: float = 1.86
-let favorite_langs = ["Haskell", "Ocaml", "Rust"]
+let favoriteLangs = ["Haskell", "Ocaml", "Rust"]
 
 if height >= 1.90 {
     print(name, " is tall above avg.")
@@ -45,7 +45,7 @@ for x in range(0, 10) {
 
 print(name)
 print(height)
-print("Favorite prog. lang.: ", favorite_langs)
+print("Favorite prog. lang.: ", favoriteLangs)
 
 ```
 
