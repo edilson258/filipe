@@ -1,9 +1,9 @@
-use super::super::{Identifier, Parser, Precedence, Stmt};
 use super::super::super::{
     ast::{Expr, ExprType, LetStmtFlags, Literal},
     parser::ParserErrorKind,
     token::Token,
 };
+use super::super::{Identifier, Parser, Precedence, Stmt};
 
 pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
     p.bump();
@@ -41,6 +41,15 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
                 Some(type_) => type_,
                 None => return None,
             };
+
+            if let ExprType::Void = generic_type {
+                p.error_handler.set_error(
+                    ParserErrorKind::TypeError,
+                    format!("Array can't be of type 'void'"),
+                );
+                return None;
+            }
+
             p.bump();
             if !p.bump_expected_current(&Token::GratherThan) {
                 return None;
@@ -50,7 +59,7 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
                 return Some(Stmt::Let(
                     Identifier(var_name),
                     Some(generic_type),
-                    Some(Expr::Literal(Literal::Array(vec![]))),
+                    None,
                     LetStmtFlags { is_array: true },
                 ));
             }
@@ -109,15 +118,7 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
         None => return None,
     };
 
-    if let Expr::Literal(Literal::Array(expr_list)) = &expr {
-        if expr_list.len() < 1 {
-            p.error_handler.set_error(
-                ParserErrorKind::TypeError,
-                format!("Unable to infer type of array '{}'", &var_name),
-            );
-            return None;
-        }
-
+    if let Expr::Literal(Literal::Array(_)) = &expr {
         return Some(Stmt::Let(
             Identifier(var_name),
             None,

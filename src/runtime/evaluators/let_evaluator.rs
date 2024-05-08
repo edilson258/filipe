@@ -92,6 +92,12 @@ fn eval_array_declaration(
             }
         };
 
+        if array_literal.len() < 1 {
+            e.error_handler
+                .set_type_error(format!("Unable to infer type of array '{}'", name));
+            return;
+        }
+
         let array_object = match e.eval_array_literal(array_literal) {
             Some(object) => object,
             None => return,
@@ -102,7 +108,7 @@ fn eval_array_declaration(
     }
 
     let generic_type = generic_type.unwrap();
-        
+
     let expected_items_type = match expr_type_to_object_type(&generic_type) {
         Type::Array => {
             e.error_handler
