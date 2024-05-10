@@ -27,7 +27,6 @@ pub fn parse_forloop_stmt(p: &mut Parser) -> Option<Stmt> {
         None => return None,
     };
     p.bump();
-    println!("Error");
 
     let block = match p.parse_block_stmt() {
         Some(block) => block,
