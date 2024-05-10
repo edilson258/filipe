@@ -1,0 +1,14 @@
+
+
+for x in range(0, 10, 2) {
+    print("step(2): ", x)
+}
+print("-----------------")
+
+for x in range(0, 10, 3) {
+    print("step(3): ", x)
+}
+print("-----------------")
+for x in range(0, 10) {
+    print("step(normal): ", x)
+}

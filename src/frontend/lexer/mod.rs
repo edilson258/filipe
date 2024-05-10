@@ -116,7 +116,7 @@ impl<'a> Lexer<'a> {
                 let token = self.read_string();
                 self.read_char();
                 return token;
-            },
+            }
             _ => None,
         };
 
@@ -212,8 +212,8 @@ impl<'a> Lexer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::Lexer;
     use super::super::token::Token;
+    use super::Lexer;
 
     #[test]
     fn test_next_token() {
@@ -234,7 +234,7 @@ if sum(5, 4) >= 10 {
     print("Will get printed")
 }
 
-for x in range(1, 10) {
+for x in range(1, 10, 2) {
     if (x % 2 == 0) {
         print(x, " is even")
     }
@@ -313,6 +313,8 @@ for x in range(1, 10) {
             Token::Int(1),
             Token::Comma,
             Token::Int(10),
+            Token::Comma,
+            Token::Int(2),
             Token::Rparen,
             Token::Lbrace,
             Token::If,

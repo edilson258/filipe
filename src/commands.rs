@@ -17,7 +17,6 @@ pub fn run_from_file(path: &str) {
     let mut l = Lexer::new(&input);
     let mut p = Parser::new(&mut l);
     let program = p.parse();
-
     if p.has_error() {
         println!("{}", p.get_error().unwrap());
         exit(1);

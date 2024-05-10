@@ -1,4 +1,4 @@
-use super::{object::Object, Runtime, Expr, ExprType, Identifier, Literal};
+use super::{object::Object, Expr, ExprType, Identifier, Literal, Runtime};
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Type {
@@ -74,7 +74,11 @@ pub fn object_to_type(object: &Object) -> Type {
         } => Type::Function,
         Object::RetVal(val) => object_to_type(&val),
         Object::Type(_) => Type::TypeAnnot,
-        Object::Range { start: _, end: _ } => Type::Range,
+        Object::Range {
+            start: _,
+            end: _,
+            step: _,
+        } => Type::Range,
         Object::Int(_) => Type::Int,
         Object::Float(_) => Type::Float,
         Object::Array(_, _) => Type::Array,

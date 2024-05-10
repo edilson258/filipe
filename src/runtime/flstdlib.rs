@@ -22,7 +22,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
             type_: Type::Function,
             value: Object::BuiltInFunction(filipe_exit),
         },
-    );    
+    );
 
     builtin_list.insert(
         "len".to_string(),
@@ -98,7 +98,11 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
             Object::RetVal(val) => print!("{}", val),
             Object::Boolean(val) => print!("{}", val),
             Object::Type(val) => print!("{}", val),
-            Object::Range { start: _, end: _ } => print!("{}", &arg.value),
+            Object::Range {
+                start: _,
+                end: _,
+                step: _,
+            } => print!("{}", &arg.value),
             Object::Array(array, _) => print!("{}", array),
         }
     }
@@ -114,7 +118,10 @@ fn filipe_exit(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     if args.len() != 1 {
         return BuiltInFuncReturnValue::Error(RuntimeError {
             kind: ErrorKind::ArgumentError,
-            msg: format!("'exit' expects 0 or 1 argument but {} were provided", args.len()),
+            msg: format!(
+                "'exit' expects 0 or 1 argument but {} were provided",
+                args.len()
+            ),
         });
     }
 
@@ -156,36 +163,46 @@ fn filipe_typeof(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
 }
 
 fn filipe_range(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
-    if args.len() != 2 {
+    if args.len() > 3 || args.len() < 2 {
         return BuiltInFuncReturnValue::Error({
             RuntimeError {
                 kind: ErrorKind::TypeError,
                 msg: format!(
-                    "function 'range' takes 2 argus but {} were provided",
+                    "function 'range' takes 2 or 3 argus but {} were provided",
                     args.len()
                 ),
             }
         });
     }
 
-    if args[0].type_ != Type::Int || args[1].type_ != Type::Int {
-        return BuiltInFuncReturnValue::Error({
-            RuntimeError {
-                kind: ErrorKind::TypeError,
-                msg: format!("args for function 'range' must be of type number"),
-            }
-        });
+    for item in args.clone().into_iter() {
+        if item.type_ != Type::Int {
+            return BuiltInFuncReturnValue::Error({
+                RuntimeError {
+                    kind: ErrorKind::TypeError,
+                    msg: format!("args for function 'range' must be of type number"),
+                }
+            });
+        }
     }
 
-    let start = match args[0].value {
-        Object::Int(x) => x,
-        _ => 0,
+    let mut built_args = vec![];
+
+    for item in args {
+        let value = match item.value {
+            Object::Int(x) => x,
+            _ => 0,
+        };
+
+        built_args.push(value)
+    }
+    if built_args.len() < 3 {
+        built_args.push(1)
     };
 
-    let end = match args[1].value {
-        Object::Int(x) => x,
-        _ => 0,
-    };
-
-    BuiltInFuncReturnValue::Object(Object::Range { start, end })
+    BuiltInFuncReturnValue::Object(Object::Range {
+        start: built_args[0],
+        end: built_args[1],
+        step: built_args[2],
+    })
 }

@@ -38,6 +38,7 @@ pub enum Object {
     Range {
         start: i64,
         end: i64,
+        step: i64,
     },
 }
 
@@ -59,7 +60,7 @@ impl fmt::Display for Object {
             Self::RetVal(val) => write!(f, "{}", val),
             Self::Boolean(val) => write!(f, "{}", val),
             Self::Type(val) => write!(f, "{}", val),
-            Self::Range { start, end } => write!(f, "range({start}, {end})"),
+            Self::Range { start, end, step } => write!(f, "range({start}, {end}, {step})"),
             Self::UserDefinedFunction {
                 name,
                 params: _,
