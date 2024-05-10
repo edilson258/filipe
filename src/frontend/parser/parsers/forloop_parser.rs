@@ -22,12 +22,12 @@ pub fn parse_forloop_stmt(p: &mut Parser) -> Option<Stmt> {
     }
 
     p.bump();
-
     let iterable = match p.parse_expr(Precedence::Lowest) {
         Some(expr) => expr,
         None => return None,
     };
     p.bump();
+    println!("Error");
 
     let block = match p.parse_block_stmt() {
         Some(block) => block,

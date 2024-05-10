@@ -80,7 +80,9 @@ impl Runtime {
             None => return None,
         };
         match iterable_object {
-            Object::Range { start, end } => self.eval_range_forloop(cursor, start, end, block),
+            Object::Range { start, end, step } => {
+                self.eval_range_forloop(cursor, start, end, step, block)
+            }
             _ => {
                 self.error_handler
                     .set_type_error(format!("for loop works only with range (for now)"));
@@ -94,6 +96,7 @@ impl Runtime {
         cursor: String,
         start: i64,
         end: i64,
+        step: i64,
         block: BlockStmt,
     ) -> Option<Object> {
         let global_scope = Rc::clone(&self.env);
@@ -104,15 +107,16 @@ impl Runtime {
             .borrow_mut()
             .add_entry(cursor.clone(), Object::Int(start), Type::Int, true);
 
-        for _ in start..end {
+        for _ in (start..end).step_by(step as usize) {
             self.eval_block_stmt(&block);
             let old_val = match self.env.borrow().resolve(&cursor).unwrap().value {
                 Object::Int(val) => val,
                 _ => return None,
             };
+            let incrementor = if step == 0 { 1 } else { step };
             self.env
                 .borrow_mut()
-                .update_entry(&cursor, Object::Int(old_val + 1));
+                .update_entry(&cursor, Object::Int(old_val + incrementor));
         }
 
         self.env = global_scope;

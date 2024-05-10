@@ -34,7 +34,6 @@ impl<'a> Parser<'a> {
 
     fn bump(&mut self) {
         let next_token = self.l.next_token();
-
         if next_token.is_err() {
             self.error_handler
                 .set_error(ParserErrorKind::SyntaxError, next_token.err().unwrap());
