@@ -18,7 +18,7 @@ use runtime_error::RuntimeErrorHandler;
 use stdlib::FilipeArray;
 use type_system::{object_to_type, Type};
 
-use self::stdlib::module::Module;
+use self::{object::ObjectInfo, stdlib::module::Module};
 
 pub struct Runtime {
     env: Rc<RefCell<Context>>,
@@ -193,6 +193,9 @@ impl Runtime {
     fn eval_module_field_acc(&mut self, module: Module, target: Expr) -> Option<Object> {
         let target = match target {
             Expr::Identifier(Identifier(name)) => name,
+            Expr::Call(fn_name_expr, args) => {
+                return self.eval_module_field_acc_func(module, *fn_name_expr, args)
+            }
             _ => {
                 self.error_handler
                     .set_sematic("Can only access by identifier".to_string());
@@ -210,6 +213,69 @@ impl Runtime {
                 return None;
             }
         }
+    }
+
+    fn eval_module_field_acc_func(
+        &mut self,
+        module: Module,
+        fn_name_expr: Expr,
+        args: Vec<Expr>,
+    ) -> Option<Object> {
+        let fn_name = match fn_name_expr {
+            Expr::Identifier(Identifier(name)) => name,
+            _ => {
+                self.error_handler
+                    .set_sematic(format!("Missing method name"));
+                return None;
+            }
+        };
+
+        let fn_obj = match module.acc_field(&fn_name) {
+            Some(object) => object,
+            None => {
+                self.error_handler.set_name_error(format!(
+                    "No method '{}' associated with module '{}'",
+                    fn_name, module.name
+                ));
+                return None;
+            }
+        };
+
+        let evaluated_args = match self.eval_fn_call_args(args) {
+            Some(evaluated_args) => evaluated_args,
+            None => return None,
+        };
+
+        match fn_obj {
+            Object::BuiltInFunction(method) => match method(evaluated_args) {
+                object::BuiltInFuncReturnValue::Object(object) => Some(object),
+                object::BuiltInFuncReturnValue::Error(err) => {
+                    self.error_handler.set_error(err.kind, err.msg);
+                    return None;
+                }
+            },
+            _ => {
+                self.error_handler
+                    .set_type_error(format!("'{}' is not callable", fn_name));
+                return None;
+            }
+        }
+    }
+
+    fn eval_fn_call_args(&mut self, args: Vec<Expr>) -> Option<Vec<ObjectInfo>> {
+        let mut checked_args: Vec<ObjectInfo> = vec![];
+        for arg in args {
+            let arg = match self.eval_expr(arg) {
+                Some(object) => ObjectInfo {
+                    is_assignable: true,
+                    type_: object_to_type(&object),
+                    value: object,
+                },
+                None => return None,
+            };
+            checked_args.push(arg);
+        }
+        Some(checked_args)
     }
 
     fn eval_postfix_expr(&mut self, expr: Expr, postfix: Postfix) -> Option<Object> {
