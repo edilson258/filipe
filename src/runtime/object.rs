@@ -1,6 +1,7 @@
 use core::fmt;
 
 use super::runtime_error::RuntimeError;
+use super::stdlib::module::Module;
 use super::stdlib::FilipeArray;
 use super::type_system::Type;
 use super::BlockStmt;
@@ -42,6 +43,7 @@ pub enum Object {
         end: i64,
         step: i64,
     },
+    Module(Module)
 }
 
 #[derive(Clone, Debug)]
@@ -72,6 +74,7 @@ impl fmt::Display for Object {
                 inner,
                 items_type:_,
             } => write!(f, "{}", inner),
+            Self::Module(m) => write!(f, "[Module] {}", m.name),
         }
     }
 }
@@ -94,6 +97,7 @@ impl fmt::Display for Type {
                 }
                 write!(f, "Array<any>")
             },
+            Self::Module => write!(f, "[Module]"),
         }
     }
 }

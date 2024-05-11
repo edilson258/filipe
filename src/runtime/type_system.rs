@@ -11,6 +11,7 @@ pub enum Type {
     Function,
     Range,
     TypeAnnot,
+    Module,
     Array(Option<Box<Type>>),
 }
 
@@ -56,5 +57,7 @@ pub fn object_to_type(object: &Object) -> Type {
             }
             return Type::Array(Some(Box::new(items_type.clone().unwrap())));
         },
+
+        Object::Module(_) => Type::Module,
     }
 }

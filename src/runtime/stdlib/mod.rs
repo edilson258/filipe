@@ -1,3 +1,4 @@
+pub mod module;
 use core::fmt;
 
 use super::object::Object;

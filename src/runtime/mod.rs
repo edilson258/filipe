@@ -18,6 +18,8 @@ use runtime_error::RuntimeErrorHandler;
 use stdlib::FilipeArray;
 use type_system::{object_to_type, Type};
 
+use self::stdlib::module::Module;
+
 pub struct Runtime {
     env: Rc<RefCell<Context>>,
     pub error_handler: RuntimeErrorHandler,
@@ -168,6 +170,45 @@ impl Runtime {
             Expr::Prefix(prefix, expr) => self.eval_prefix_expr(prefix, *expr),
             Expr::Postfix(expr, postfix) => self.eval_postfix_expr(*expr, postfix),
             Expr::Assign(identifier, expr) => self.eval_assign_expr(identifier, *expr),
+            Expr::FieldAcc(src, target) => self.eval_field_access(*src, *target),
+        }
+    }
+
+    fn eval_field_access(&mut self, src: Expr, target: Expr) -> Option<Object> {
+        let src = match self.eval_expr(src) {
+            Some(object) => object,
+            None => return None,
+        };
+
+        match src {
+            Object::Module(module) => self.eval_module_field_acc(module, target),
+            _ => {
+                self.error_handler
+                    .set_sematic("Member access impl for modules only".to_string());
+                return None;
+            }
+        }
+    }
+
+    fn eval_module_field_acc(&mut self, module: Module, target: Expr) -> Option<Object> {
+        let target = match target {
+            Expr::Identifier(Identifier(name)) => name,
+            _ => {
+                self.error_handler
+                    .set_sematic("Can only access by identifier".to_string());
+                return None;
+            }
+        };
+
+        match module.acc_field(&target) {
+            Some(field) => Some(field),
+            None => {
+                self.error_handler.set_name_error(format!(
+                    "Module '{}' has no field '{}'",
+                    module.name, target
+                ));
+                return None;
+            }
         }
     }
 

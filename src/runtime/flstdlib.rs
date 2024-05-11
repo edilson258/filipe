@@ -1,5 +1,6 @@
 use super::object::{BuiltInFuncReturnValue, Object, ObjectInfo};
 use super::runtime_error::{ErrorKind, RuntimeError};
+use super::stdlib::module::Module;
 use super::type_system::Type;
 use std::collections::HashMap;
 
@@ -78,7 +79,22 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
         },
     );
 
+    builtin_list.insert(
+        "Math".to_string(),
+        ObjectInfo {
+            is_assignable: false,
+            type_: Type::Module,
+            value: module_math(),
+        },
+    );
+
     builtin_list
+}
+
+fn module_math() -> Object {
+    let mut math_fields: HashMap<String, Object> = HashMap::new();
+    math_fields.insert("PI".to_string(), Object::Float(3.1415));
+    Object::Module(Module::make("Math".to_string(), math_fields))
 }
 
 fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
@@ -106,6 +122,7 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
                 inner,
                 items_type: _,
             } => print!("{}", inner),
+            Object::Module(_) => print!("{}", arg.value),
         }
     }
     println!();
