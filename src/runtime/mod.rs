@@ -240,6 +240,12 @@ impl Runtime {
     }
 
     fn eval_return(&mut self, expr: Option<Expr>) -> Option<Object> {
+        if !self.env.borrow().in_context_type(ContextType::Function) {
+            self.error_handler
+                .set_sematic("'return' outside of function".to_string());
+            return None;
+        }
+
         if expr.is_none() {
             return Some(Object::RetVal(Box::new(Object::Null)));
         }

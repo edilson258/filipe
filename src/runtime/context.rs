@@ -4,7 +4,7 @@ use super::{
 };
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ContextType {
     Global,
     Function,
@@ -70,16 +70,6 @@ impl Context {
         self.store.contains_key(name)
     }
 
-    pub fn has_deep(&self, name: &str) -> bool {
-        if self.store.contains_key(name) {
-            return true;
-        }
-        match self.parent {
-            Some(ref p) => p.borrow().has_deep(name),
-            None => false,
-        }
-    }
-
     pub fn resolve(&self, name: &str) -> Option<ObjectInfo> {
         if self.store.contains_key(name) {
             let obj = self.store.get(name).unwrap();
@@ -88,6 +78,16 @@ impl Context {
         match self.parent {
             Some(ref p) => p.borrow().resolve(name),
             None => None,
+        }
+    }
+
+    pub fn in_context_type(&self, ctx_type: ContextType) -> bool {
+        if self.type_ == ctx_type {
+            return true;
+        }
+        match self.parent {
+            Some(ref p) => p.borrow().in_context_type(ctx_type),
+            None => false
         }
     }
 }

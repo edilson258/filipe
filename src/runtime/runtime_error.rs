@@ -5,6 +5,7 @@ pub enum ErrorKind {
     NameError,
     TypeError,
     ArgumentError,
+    SemanticError,
 }
 
 #[derive(Clone)]
@@ -37,7 +38,10 @@ impl RuntimeErrorHandler {
 
     pub fn set_type_error(&mut self, msg: String) {
         self.set_error(ErrorKind::TypeError, msg)
+    }
 
+    pub fn set_sematic(&mut self, msg: String) {
+        self.set_error(ErrorKind::SemanticError, msg);
     }
 
     pub fn set_error(&mut self, kind: ErrorKind, msg: String) {
@@ -60,6 +64,7 @@ impl fmt::Display for ErrorKind {
             Self::NameError => write!(f, "[Name error]"),
             Self::TypeError => write!(f, "[Type Error]"),
             Self::ArgumentError => write!(f, "[Argument Error]"),
+            Self::SemanticError => write!(f, "[Semantic Error]"),
         }
     }
 }
