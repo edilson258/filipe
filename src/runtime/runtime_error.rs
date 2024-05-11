@@ -5,6 +5,7 @@ pub enum ErrorKind {
     NameError,
     TypeError,
     ArgumentError,
+    ValueError,
 }
 
 #[derive(Clone)]
@@ -46,6 +47,7 @@ impl RuntimeErrorHandler {
             msg,
         });
     }
+
 }
 
 impl fmt::Display for RuntimeError {
@@ -60,6 +62,7 @@ impl fmt::Display for ErrorKind {
             Self::NameError => write!(f, "[Name error]"),
             Self::TypeError => write!(f, "[Type Error]"),
             Self::ArgumentError => write!(f, "[Argument Error]"),
+            Self::ValueError => write!(f, "[Value Error]"),
         }
     }
 }

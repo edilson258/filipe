@@ -70,16 +70,6 @@ impl Context {
         self.store.contains_key(name)
     }
 
-    pub fn has_deep(&self, name: &str) -> bool {
-        if self.store.contains_key(name) {
-            return true;
-        }
-        match self.parent {
-            Some(ref p) => p.borrow().has_deep(name),
-            None => false,
-        }
-    }
-
     pub fn resolve(&self, name: &str) -> Option<ObjectInfo> {
         if self.store.contains_key(name) {
             let obj = self.store.get(name).unwrap();

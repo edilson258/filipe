@@ -2,6 +2,7 @@ use super::object::{BuiltInFuncReturnValue, Object, ObjectInfo};
 use super::runtime_error::{ErrorKind, RuntimeError};
 use super::type_system::Type;
 use std::collections::HashMap;
+use rand::Rng;
 
 pub fn builtins() -> HashMap<String, ObjectInfo> {
     let mut builtin_list: HashMap<String, ObjectInfo> = HashMap::new();
@@ -33,6 +34,14 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
         },
     );
 
+    builtin_list.insert(
+        "random".to_string(),
+        ObjectInfo {
+            is_assignable: false,
+            type_: Type::Function,
+            value: Object::BuiltInFunction(filipe_random),
+        },
+    );  
     builtin_list.insert(
         "typeof".to_string(),
         ObjectInfo {
@@ -110,6 +119,59 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     }
     println!();
     BuiltInFuncReturnValue::Object(Object::Null)
+}
+
+fn filipe_random(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
+    match args.len() {
+        0 => {
+            let num = rand::thread_rng().gen::<f64>();
+            BuiltInFuncReturnValue::Object(Object::Float(num))
+        }
+        1 => {
+            if let Object::Int(max) = args[0].value.clone() {
+                if max < 0 {
+                    return BuiltInFuncReturnValue::Error(RuntimeError {
+                        kind: ErrorKind::ValueError,
+                        msg: "Argument for 'random' must be a non-negative integer".to_string(),
+                    });
+                }
+                let num = rand::thread_rng().gen_range(0..=max);
+                BuiltInFuncReturnValue::Object(Object::Int(num))
+            } else {
+                BuiltInFuncReturnValue::Error(RuntimeError {
+                    kind: ErrorKind::TypeError,
+                    msg: "'random' expects an integer argument".to_string(),
+                })
+            }
+        }
+        2 => {
+            if let (Object::Int(min), Object::Int(max)) = (args[0].value.clone(), args[1].value.clone()) {
+                if min < 0 || max < 0 {
+                    return BuiltInFuncReturnValue::Error(RuntimeError {
+                        kind: ErrorKind::ValueError,
+                        msg: "Arguments for 'random' must be non-negative integers".to_string(),
+                    });
+                }
+                if min > max {
+                    return BuiltInFuncReturnValue::Error(RuntimeError {
+                        kind: ErrorKind::ValueError,
+                        msg: "The first argument for 'random' must be less than or equal to the second argument".to_string(),
+                    });
+                }
+                let num = rand::thread_rng().gen_range(min..=max);
+                BuiltInFuncReturnValue::Object(Object::Int(num))
+            } else {
+                BuiltInFuncReturnValue::Error(RuntimeError {
+                    kind: ErrorKind::TypeError,
+                    msg: "'random' expects two integer arguments".to_string(),
+                })
+            }
+        }
+        _ => BuiltInFuncReturnValue::Error(RuntimeError {
+            kind: ErrorKind::ArgumentError,
+            msg: "'random' expects 0, 1, or 2 arguments".to_string(),
+        }),
+    }
 }
 
 fn filipe_exit(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
