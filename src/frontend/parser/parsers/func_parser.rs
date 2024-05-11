@@ -3,16 +3,14 @@ use crate::frontend::parser::{Parser, ParserErrorKind};
 use crate::frontend::token::Token;
 
 pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
-    let fn_identifier = match p.next_token.clone() {
-        Token::Identifier(val) => {
-            p.bump();
-            Identifier(val)
-        }
+    let fn_name = match p.next_token.clone() {
+        Token::Identifier(name) => Identifier(name),
         _ => {
             p.error_handler.set_identifier_error(&p.next_token);
             return None;
         }
     };
+    p.bump();
     if !p.bump_expected_next(&Token::Lparen) {
         return None;
     }
@@ -39,7 +37,7 @@ pub fn parse_func_stmt(p: &mut Parser) -> Option<Stmt> {
         Some(block) => block,
         None => return None,
     };
-    Some(Stmt::Func(fn_identifier, fn_params, body, return_type))
+    Some(Stmt::Func(fn_name, fn_params, body, return_type))
 }
 
 fn parse_func_params(p: &mut Parser) -> Option<Vec<(Identifier, ExprType)>> {
