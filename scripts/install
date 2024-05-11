@@ -1,0 +1,30 @@
+#!/bin/bash
+
+script_path="$(pwd)/scripts/filipec"
+
+shell=$(ps -p $PPID -o command=)
+
+if [ "$shell" = "bash" ]; then
+    if [ -f ~/.bashrc ]; then
+        echo "Adding alias to ~/.bashrc..."
+        echo "alias filipec=\"$script_path\"" >> ~/.bashrc
+        echo "Alias 'filipec' added to ~/.bashrc."
+        source ~/.bashrc
+    else
+        echo "No ~/.bashrc file found. The alias 'filipec' could not be added."
+        exit 1
+    fi
+elif [ "$shell" = "zsh" ]; then
+    if [ -f ~/.zshrc ]; then
+        echo "Adding alias to ~/.zshrc..."
+        echo "alias filipec=\"$script_path\"" >> ~/.zshrc
+        echo "Alias 'filipec' added to ~/.zshrc."
+        source ~/.zshrc
+    else
+        echo "No ~/.zshrc file found. The alias 'filipec' could not be added."
+        exit 1
+    fi
+else
+    echo "Unrecognized shell: $shell. The alias 'filipec' could not be added."
+    exit 1
+fi
