@@ -2,7 +2,7 @@ use crate::frontend::ast::{Expr, ExprType};
 use crate::runtime::type_system::expr_type_to_object_type;
 use crate::runtime::type_system::Type;
 use crate::runtime::Runtime;
-use crate::runtime::{object_to_type, Object};
+use crate::runtime::Object;
 use crate::stdlib::FilipeArray;
 
 pub fn eval_let_stmt(
@@ -63,7 +63,7 @@ pub fn eval_let_stmt(
             None => return,
         };
 
-        let evaluated_expr_type = object_to_type(&evaluated_expr);
+        let evaluated_expr_type = evaluated_expr.ask_type();
 
         if let Type::Array(None) = evaluated_expr_type {
             add_to_env(
@@ -91,13 +91,13 @@ pub fn eval_let_stmt(
         None => return,
     };
 
-    let evaluated_expr_type = object_to_type(&evaluated_expr);
+    let evaluated_expr_type = evaluated_expr.ask_type();
 
     if expected_type != evaluated_expr_type {
         rt.error_handler.set_type_error(format!(
             "Assigning value of type {} to variable '{name}' which has type {}",
             expected_type,
-            object_to_type(&evaluated_expr)
+            evaluated_expr.ask_type()
         ));
         return;
     }
@@ -121,7 +121,7 @@ fn eval_let_by_type_inference(e: &mut Runtime, name: String, expr: Expr) {
         return;
     }
 
-    let infered_type = object_to_type(&evaluated_expr);
+    let infered_type = evaluated_expr.ask_type();
     add_to_env(e, &name, evaluated_expr, infered_type);
 }
 

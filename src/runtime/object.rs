@@ -1,10 +1,10 @@
 use core::fmt;
 
 use super::runtime_error::RuntimeError;
-use crate::stdlib::modules::Module;
-use crate::stdlib::FilipeArray;
 use super::type_system::Type;
 use super::BlockStmt;
+use crate::stdlib::modules::Module;
+use crate::stdlib::FilipeArray;
 
 pub enum BuiltInFuncReturnValue {
     Object(Object),
@@ -44,6 +44,42 @@ pub enum Object {
         step: i64,
     },
     Module(Module),
+}
+
+impl Object {
+    pub fn ask_type(&self) -> Type {
+        match self {
+            Object::Null => Type::Null,
+            Object::String(_) => Type::String,
+            Object::Boolean(_) => Type::Boolean,
+            Object::BuiltInFunction(_) => Type::Function,
+            Object::UserDefinedFunction {
+                params: _,
+                body: _,
+                return_type: _,
+            } => Type::Function,
+            Object::RetVal(val) => val.ask_type(),
+            Object::Type(_) => Type::TypeAnnot,
+            Object::Range {
+                start: _,
+                end: _,
+                step: _,
+            } => Type::Range,
+            Object::Int(_) => Type::Int,
+            Object::Float(_) => Type::Float,
+            Object::Array {
+                inner: _,
+                items_type,
+            } => {
+                if items_type.is_none() {
+                    return Type::Array(None);
+                }
+                return Type::Array(Some(Box::new(items_type.clone().unwrap())));
+            }
+
+            Object::Module(_) => Type::Module,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

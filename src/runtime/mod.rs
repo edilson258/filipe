@@ -17,7 +17,7 @@ use evaluators::func_def_evaluator::eval_func_def;
 use evaluators::let_evaluator::eval_let_stmt;
 use object::Object;
 use runtime_error::RuntimeErrorHandler;
-use type_system::{object_to_type, Type};
+use type_system::Type;
 
 pub struct Runtime {
     env: Rc<RefCell<Context>>,
@@ -267,7 +267,7 @@ impl Runtime {
             let arg = match self.eval_expr(arg) {
                 Some(object) => ObjectInfo {
                     is_mut: true,
-                    type_: object_to_type(&object),
+                    type_: object.ask_type(),
                     value: object,
                 },
                 None => return None,
@@ -388,7 +388,7 @@ impl Runtime {
             return None;
         }
 
-        let new_value_type = object_to_type(&new_value);
+        let new_value_type = new_value.ask_type();
 
         if old_value.type_ != new_value_type {
             self.error_handler.set_type_error(format!(
@@ -408,7 +408,7 @@ impl Runtime {
         old_array_items_type: Type,
         new_array: Object,
     ) -> Option<Object> {
-        let new_array_items_type = match object_to_type(&new_array) {
+        let new_array_items_type = match new_array.ask_type() {
             Type::Array(opt_type) => opt_type,
             _ => {
                 self.error_handler.set_type_error(format!(
@@ -464,12 +464,12 @@ impl Runtime {
         let lhs = lhs.unwrap();
         let rhs = rhs.unwrap();
 
-        if object_to_type(&lhs) != object_to_type(&rhs) {
+        if lhs.ask_type() != rhs.ask_type() {
             self.error_handler.set_type_error(format!(
                 "'{}' operation not allowed between types {} and {}",
                 infix,
-                object_to_type(&lhs),
-                object_to_type(&rhs),
+                lhs.ask_type(),
+                rhs.ask_type(),
             ));
             return None;
         }
@@ -593,7 +593,7 @@ impl Runtime {
             None => return None,
         };
 
-        let first_item_type = object_to_type(&first_item);
+        let first_item_type = first_item.ask_type();
 
         let mut objects: Vec<Object> = vec![];
         objects.push(first_item);
@@ -604,7 +604,7 @@ impl Runtime {
                 None => return None,
             };
 
-            if first_item_type != object_to_type(&item) {
+            if first_item_type != item.ask_type() {
                 self.error_handler
                     .set_type_error("Array item's type mismatch".to_string());
                 return None;
