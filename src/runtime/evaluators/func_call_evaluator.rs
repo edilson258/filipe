@@ -3,21 +3,38 @@ use std::rc::Rc;
 
 use super::super::object::*;
 use crate::runtime::context::Context;
-use crate::runtime::type_system::{expr_to_type, object_to_type, Type};
-use crate::runtime::{Runtime, Expr, Identifier};
+use crate::runtime::type_system::{object_to_type, Type};
+use crate::runtime::{Expr, Identifier, Runtime};
 
 pub fn eval_call_expr(
     e: &mut Runtime,
     func_ident: Expr,
     provided_args: Vec<Expr>,
 ) -> Option<Object> {
-    let mut checked_args: Vec<ObjectInfo> = vec![];
+    let fn_name = match func_ident {
+        Expr::Identifier(Identifier(name)) => name,
+        _ => {
+            e.error_handler
+                .set_name_error(format!("Function name must be an identifier"));
+            return None;
+        }
+    };
 
+    let fn_object = match e.env.borrow().resolve(&fn_name) {
+        Some(object) => object.value,
+        None => {
+            e.error_handler
+                .set_name_error(format!("'{}' is not declared", fn_name));
+            return None;
+        }
+    };
+
+    let mut checked_args: Vec<ObjectInfo> = vec![];
     for arg in provided_args {
-        let arg = match e.eval_expr(arg.clone()) {
+        let arg = match e.eval_expr(arg) {
             Some(object) => ObjectInfo {
                 is_assignable: true,
-                type_: expr_to_type(e, &arg).unwrap_or(object_to_type(&object)),
+                type_: object_to_type(&object),
                 value: object,
             },
             None => return None,
@@ -25,24 +42,7 @@ pub fn eval_call_expr(
         checked_args.push(arg);
     }
 
-    let func_name = match Runtime::expr_to_identifier(&func_ident) {
-        Some(identifier) => {
-            let Identifier(name) = identifier;
-            name
-        }
-        None => {
-            e.error_handler
-                .set_type_error(format!("invalid function name {:?}", func_ident));
-            return None;
-        }
-    };
-
-    let func_object = match e.eval_expr(func_ident) {
-        Some(expr) => expr,
-        None => return None,
-    };
-
-    let (name, params, body, expected_ret_type) = match func_object.clone() {
+    let (params, body, expected_ret_type) = match fn_object {
         Object::BuiltInFunction(builtin_fn) => match builtin_fn(checked_args) {
             BuiltInFuncReturnValue::Object(object) => return Some(object),
             BuiltInFuncReturnValue::Error(err) => {
@@ -51,14 +51,13 @@ pub fn eval_call_expr(
             }
         },
         Object::UserDefinedFunction {
-            name,
             params,
             body,
             return_type,
-        } => (name, params, body, return_type),
+        } => (params, body, return_type),
         _ => {
             e.error_handler
-                .set_type_error(format!("'{}' is not callable", func_name));
+                .set_type_error(format!("'{}' is not callable", fn_name));
             return None;
         }
     };
@@ -66,7 +65,7 @@ pub fn eval_call_expr(
     if params.len() != checked_args.len() {
         e.error_handler.set_type_error(format!(
             "Function '{}' expecteds {} args but provided {}",
-            name,
+            fn_name,
             params.len(),
             checked_args.len()
         ));
@@ -77,29 +76,29 @@ pub fn eval_call_expr(
     let mut fn_scope = Context::empty(Some(Rc::clone(&global_scope)));
 
     for (_, (FunctionParam { name, type_ }, object_info)) in
-        params.iter().zip(checked_args).enumerate()
+        params.into_iter().zip(checked_args).enumerate()
     {
-        if type_ != &object_info.type_ {
+        if type_ != object_info.type_ {
             e.error_handler.set_type_error(format!(
-                "passing argument of type '{}' to parameter of type '{}'",
-                &object_info.type_, type_
+                "Passing argument of type '{}' to parameter of type '{}'",
+                object_info.type_, type_
             ));
             return None;
         }
 
-        fn_scope.add_entry(name.clone(), object_info.value, object_info.type_, true);
+        fn_scope.add_entry(name, object_info.value, object_info.type_, true);
     }
 
     e.env = Rc::new(RefCell::new(fn_scope));
-    let returned_value = e.eval_block_stmt(&body).unwrap_or(Object::Null);
+    let returned_value = e.eval_block_stmt(&body);
     let provided_type = object_to_type(&returned_value);
 
     if (expected_ret_type != provided_type)
         && !is_types_equivalents(&expected_ret_type, &provided_type)
     {
         e.error_handler.set_type_error(format!(
-            "function '{}' must return '{}' but found '{}'",
-            name, expected_ret_type, provided_type
+            "Function '{}' must return '{}' but found '{}'",
+            fn_name, expected_ret_type, provided_type
         ));
         return None;
     }

@@ -16,9 +16,11 @@ impl FilipeArray {
         }
     }
 
+    /*
     pub fn push(&mut self, item: Object) {
         self.inner.push(item);
     }
+    */
 
     fn _next_item(&mut self) -> Option<Object> {
         if self.inner.len() <= self.__cursor__ {

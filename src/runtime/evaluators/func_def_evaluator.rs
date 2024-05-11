@@ -1,15 +1,20 @@
 use crate::runtime::object::{FunctionParam, FunctionParams, Object};
 use crate::runtime::type_system::{expr_type_to_object_type, Type};
-use crate::runtime::{BlockStmt, Runtime, ExprType, Identifier};
+use crate::runtime::{BlockStmt, ExprType, Identifier, Runtime};
 
 pub fn eval_func_def(
     e: &mut Runtime,
-    identifier: &Identifier,
+    name: String,
     params: &Vec<(Identifier, ExprType)>,
     body: &BlockStmt,
     ret_type: &ExprType,
 ) {
-    let Identifier(name) = identifier;
+    if e.env.borrow().is_declared(&name) {
+        e.error_handler
+            .set_name_error(format!("'{}' is already declared", name));
+        return;
+    }
+
     let params = params
         .iter()
         .map(|param| {
@@ -23,16 +28,12 @@ pub fn eval_func_def(
         .collect::<FunctionParams>();
     let return_type = expr_type_to_object_type(ret_type);
     let function_object = Object::UserDefinedFunction {
-        name: name.clone(),
         params,
         body: body.clone(),
         return_type,
     };
-    if !e
-        .env
-        .borrow_mut().add_entry(name.clone(), function_object, Type::Function, false)
-    {
-        e.error_handler
-            .set_name_error(format!("'{}' is already declared", name));
-    }
+
+    e.env
+        .borrow_mut()
+        .add_entry(name, function_object, Type::Function, false);
 }

@@ -27,9 +27,11 @@ pub enum Object {
     Boolean(bool),
     String(String),
     RetVal(Box<Object>),
-    Array(FilipeArray, Type),
+    Array {
+        inner: FilipeArray,
+        items_type: Option<Type>,
+    },
     UserDefinedFunction {
-        name: String,
         params: FunctionParams,
         body: BlockStmt,
         return_type: Type,
@@ -38,6 +40,7 @@ pub enum Object {
     Range {
         start: i64,
         end: i64,
+        step: i64,
     },
 }
 
@@ -59,14 +62,16 @@ impl fmt::Display for Object {
             Self::RetVal(val) => write!(f, "{}", val),
             Self::Boolean(val) => write!(f, "{}", val),
             Self::Type(val) => write!(f, "{}", val),
-            Self::Range { start, end } => write!(f, "range({start}, {end})"),
+            Self::Range { start, end, step } => write!(f, "range({start}, {end}, {step})"),
             Self::UserDefinedFunction {
-                name,
                 params: _,
                 body: _,
                 return_type: _,
-            } => write!(f, "[User Defined Function] {name}"),
-            Self::Array(array, _) => write!(f, "{}", array),
+            } => write!(f, "[User Defined Function]"),
+            Self::Array {
+                inner,
+                items_type:_,
+            } => write!(f, "{}", inner),
         }
     }
 }
@@ -83,8 +88,12 @@ impl fmt::Display for Type {
             Self::Function => write!(f, "function"),
             Self::TypeAnnot => write!(f, "[Type Annotation]"),
             Self::Range => write!(f, "{}", self),
-            Self::Array => write!(f, "Array"),
-            Type::Unknown => write!(f, "[Unknown Type]"),
+            Self::Array(items_type) => {
+                if let Some(items_type) = items_type {
+                    return write!(f, "Array<{}>", items_type)
+                }
+                write!(f, "Array<any>")
+            },
         }
     }
 }

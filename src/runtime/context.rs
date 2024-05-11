@@ -84,11 +84,4 @@ impl Context {
             None => false,
         };
     }
-
-    pub fn get_typeof(&self, name: &str) -> Option<Type> {
-        if !self.is_declared(name) {
-            return None;
-        }
-        Some(self.resolve(name).unwrap().type_.clone())
-    }
 }
