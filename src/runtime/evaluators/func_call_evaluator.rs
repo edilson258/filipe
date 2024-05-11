@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::super::object::*;
-use crate::runtime::context::Context;
+use crate::runtime::context::{Context, ContextType};
 use crate::runtime::type_system::{object_to_type, Type};
 use crate::runtime::{Expr, Identifier, Runtime};
 
@@ -73,7 +73,7 @@ pub fn eval_call_expr(
     }
 
     let global_scope = Rc::clone(&e.env);
-    let mut fn_scope = Context::empty(Some(Rc::clone(&global_scope)));
+    let mut fn_scope = Context::make_from(Rc::clone(&global_scope), ContextType::Function);
 
     for (_, (FunctionParam { name, type_ }, object_info)) in
         params.into_iter().zip(checked_args).enumerate()
@@ -86,7 +86,11 @@ pub fn eval_call_expr(
             return None;
         }
 
-        fn_scope.add_entry(name, object_info.value, object_info.type_, true);
+        if !fn_scope.set(name.clone(), object_info.type_, object_info.value, true) {
+            e.error_handler
+                .set_name_error(format!("Param '{}' already declared", &name));
+            return None;
+        }
     }
 
     e.env = Rc::new(RefCell::new(fn_scope));

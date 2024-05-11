@@ -18,6 +18,8 @@ use runtime_error::RuntimeErrorHandler;
 use stdlib::FilipeArray;
 use type_system::{has_same_type, object_to_type, Type};
 
+use self::context::ContextType;
+
 pub struct Runtime {
     env: Rc<RefCell<Context>>,
     pub error_handler: RuntimeErrorHandler,
@@ -99,13 +101,13 @@ impl Runtime {
         step: i64,
         block: BlockStmt,
     ) -> Option<Object> {
-        let global_scope = Rc::clone(&self.env);
-        let block_scope = Context::empty(Some(Rc::clone(&global_scope)));
-        self.env = Rc::new(RefCell::new(block_scope));
+        let parent_scope = Rc::clone(&self.env);
+        let loop_scope = Context::make_from(Rc::clone(&parent_scope), ContextType::Loop);
+        self.env = Rc::new(RefCell::new(loop_scope));
 
         self.env
             .borrow_mut()
-            .add_entry(cursor.clone(), Object::Int(start), Type::Int, true);
+            .set(cursor.clone(), Type::Int, Object::Int(start), true);
 
         for _ in (start..end).step_by(step as usize) {
             self.eval_block_stmt(&block);
@@ -116,10 +118,10 @@ impl Runtime {
             let incrementor = if step == 0 { 1 } else { step };
             self.env
                 .borrow_mut()
-                .update_entry(&cursor, Object::Int(old_val + incrementor));
+                .mutate(cursor.clone(), Object::Int(old_val + incrementor));
         }
 
-        self.env = global_scope;
+        self.env = parent_scope;
         None
     }
 
@@ -143,6 +145,10 @@ impl Runtime {
             None => return None,
         };
 
+        let parent_scope = Rc::clone(&self.env);
+        let ifelse_scope = Context::make_from(Rc::clone(&parent_scope), ContextType::IfElse);
+        self.env = Rc::new(RefCell::new(ifelse_scope));
+
         if self.is_truthy(evaluated_cond) {
             return Some(self.eval_block_stmt(&consequence));
         }
@@ -151,6 +157,7 @@ impl Runtime {
             return Some(self.eval_block_stmt(&alternative.unwrap()));
         }
 
+        self.env = parent_scope;
         None
     }
 
@@ -254,6 +261,13 @@ impl Runtime {
                 return None;
             }
         };
+
+        if !old_value.is_assignable {
+            self.error_handler
+                .set_name_error(format!("'{}' is not assignable", name));
+            return None;
+        }
+
         let new_value = match self.eval_expr(expr) {
             Some(value) => value,
             None => return None,
@@ -274,7 +288,7 @@ impl Runtime {
             return None;
         }
 
-        self.env.borrow_mut().update_entry(&name, new_value);
+        self.env.borrow_mut().mutate(name, new_value);
         None
     }
 
@@ -296,8 +310,8 @@ impl Runtime {
         };
 
         if new_array_items_type.is_none() {
-            self.env.borrow_mut().update_entry(
-                &name,
+            self.env.borrow_mut().mutate(
+                name,
                 Object::Array {
                     inner: FilipeArray::new(vec![]),
                     items_type: Some(old_array_items_type),
@@ -316,7 +330,7 @@ impl Runtime {
             return None;
         }
 
-        self.env.borrow_mut().update_entry(&name, new_array);
+        self.env.borrow_mut().mutate(name, new_array);
         None
     }
 
@@ -496,14 +510,14 @@ impl Runtime {
 
     fn resolve_identfier(&mut self, identifier: Identifier) -> Option<Object> {
         let Identifier(name) = identifier;
-        let object = match self.env.borrow().resolve(&name) {
-            Some(object) => object,
+        let meta_object = match self.env.borrow().resolve(&name) {
+            Some(meta_object) => meta_object,
             None => {
                 self.error_handler
                     .set_name_error(format!("'{}' is not declared", &name));
                 return None;
             }
         };
-        Some(object.value)
+        Some(meta_object.value)
     }
 }

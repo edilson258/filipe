@@ -22,7 +22,7 @@ pub fn run_from_file(path: &str) {
         exit(1);
     };
 
-    let env = Context::from(builtins(), None);
+    let env = Context::make_global(builtins());
     let mut evaltr = Runtime::new(Rc::new(RefCell::new(env)));
     evaltr.eval(program);
 }

@@ -107,7 +107,7 @@ pub fn repl() {
     println!("Type \".help\" for more information.");
 
     let mut rl = DefaultEditor::new().unwrap();
-    let env = Rc::new(RefCell::new(Context::from(builtins(), None)));
+    let env = Rc::new(RefCell::new(Context::make_global(builtins())));
 
     loop {
         let readline = read_line(&mut rl, "|> ");

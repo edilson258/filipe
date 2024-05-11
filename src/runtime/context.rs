@@ -5,83 +5,89 @@ use super::{
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone)]
+pub enum ContextType {
+    Global,
+    Function,
+    Loop,
+    IfElse,
+}
+
+#[derive(Debug, Clone)]
 pub struct Context {
+    type_: ContextType,
     store: HashMap<String, ObjectInfo>,
     parent: Option<Rc<RefCell<Context>>>,
 }
 
 impl Context {
-    pub fn empty(parent: Option<Rc<RefCell<Context>>>) -> Self {
+    pub fn make_from(parent: Rc<RefCell<Context>>, type_: ContextType) -> Self {
         Self {
+            type_,
             store: HashMap::new(),
-            parent,
+            parent: Some(parent),
         }
     }
 
-    pub fn from(store: HashMap<String, ObjectInfo>, parent: Option<Context>) -> Self {
-        let parent = match parent {
-            Some(parent) => Some(Rc::new(RefCell::new(parent))),
-            None => None,
-        };
-        Self { store, parent }
+    pub fn make_global(store: HashMap<String, ObjectInfo>) -> Self {
+        Self {
+            type_: ContextType::Global,
+            store,
+            parent: None,
+        }
     }
 
-    pub fn add_entry(
-        &mut self,
-        name: String,
-        value: Object,
-        type_: Type,
-        is_assignable: bool,
-    ) -> bool {
+    pub fn set(&mut self, name: String, type_: Type, value: Object, is_assignable: bool) -> bool {
         if self.store.contains_key(&name) {
             return false;
         }
         self.store.insert(
             name,
             ObjectInfo {
+                value,
                 is_assignable,
                 type_,
-                value,
             },
         );
         true
     }
 
-    pub fn update_entry(&mut self, name: &str, value: Object) -> bool {
-        let old_entry = match self.store.get_mut(name) {
-            Some(object_info) => object_info,
-            None => {
-                return match self.parent {
-                    Some(ref parent) => parent.borrow_mut().update_entry(name, value),
-                    None => false,
-                }
+    pub fn mutate(&mut self, name: String, value: Object) -> bool {
+        if self.store.contains_key(&name) {
+            let old = self.store.get_mut(&name).unwrap();
+            if !old.is_assignable {
+                return false;
             }
-        };
-        if !old_entry.is_assignable {
-            return false;
+            old.value = value;
+            return true;
         }
-        old_entry.value = value;
-        true
+        match self.parent {
+            Some(ref p) => p.borrow_mut().mutate(name, value),
+            None => false,
+        }
+    }
+
+    pub fn has(&self, name: &str) -> bool {
+        self.store.contains_key(name)
+    }
+
+    pub fn has_deep(&self, name: &str) -> bool {
+        if self.store.contains_key(name) {
+            return true;
+        }
+        match self.parent {
+            Some(ref p) => p.borrow().has_deep(name),
+            None => false,
+        }
     }
 
     pub fn resolve(&self, name: &str) -> Option<ObjectInfo> {
         if self.store.contains_key(name) {
-            let obj = self.store.get(name).unwrap().clone();
-            return Some(obj);
+            let obj = self.store.get(name).unwrap();
+            return Some(obj.clone());
         }
-        return match &self.parent {
-            Some(ref parent) => parent.borrow().resolve(name),
+        match self.parent {
+            Some(ref p) => p.borrow().resolve(name),
             None => None,
-        };
-    }
-
-    pub fn is_declared(&self, name: &str) -> bool {
-        if self.store.contains_key(name) {
-            return true;
         }
-        return match &self.parent {
-            Some(ref parent) => parent.borrow().is_declared(name),
-            None => false,
-        };
     }
 }

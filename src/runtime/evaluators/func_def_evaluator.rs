@@ -9,7 +9,7 @@ pub fn eval_func_def(
     body: &BlockStmt,
     ret_type: &ExprType,
 ) {
-    if e.env.borrow().is_declared(&name) {
+    if e.env.borrow().has(&name) {
         e.error_handler
             .set_name_error(format!("'{}' is already declared", name));
         return;
@@ -35,5 +35,5 @@ pub fn eval_func_def(
 
     e.env
         .borrow_mut()
-        .add_entry(name, function_object, Type::Function, false);
+        .set(name, Type::Function, function_object, false);
 }

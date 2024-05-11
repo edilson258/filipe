@@ -9,7 +9,7 @@ pub fn eval_let_stmt(
     expr_type: Option<ExprType>,
     expr: Option<Expr>,
 ) {
-    if rt.env.borrow().is_declared(&name) {
+    if rt.env.borrow().has(&name) {
         rt.error_handler
             .set_name_error(format!("'{}' already declared", name));
         return;
@@ -112,7 +112,5 @@ fn eval_let_by_type_inference(e: &mut Runtime, name: String, expr: Expr) {
 }
 
 fn add_to_env(e: &mut Runtime, name: &String, object: Object, type_: Type) {
-    e.env
-        .borrow_mut()
-        .add_entry(name.clone(), object, type_, true);
+    e.env.borrow_mut().set(name.clone(), type_, object, true);
 }
