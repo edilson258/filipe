@@ -218,7 +218,7 @@ impl<'a> Parser<'a> {
             Expr::Identifier(identifier) => identifier,
             _ => {
                 self.error_handler
-                    .set_invalid_left_side_of_assignment_error(left);
+                    .set_invalid_left_side_of_assignment_error();
                 return None;
             }
         };
@@ -315,13 +315,34 @@ impl<'a> Parser<'a> {
             Token::TypeFloat => Some(ExprType::Float),
             Token::TypeString => Some(ExprType::String),
             Token::TypeBoolean => Some(ExprType::Boolean),
-            Token::ClassArray => Some(ExprType::Array),
+            Token::ClassArray => {
+                let generic_type = match self.parse_generic_type() {
+                    Some(generic_type) => generic_type,
+                    None => return None,
+                };
+                Some(ExprType::Array(Box::new(generic_type)))
+            }
             _ => {
                 self.error_handler
                     .set_not_type_annot_error(&self.curr_token);
                 return None;
             }
         }
+    }
+
+    fn parse_generic_type(&mut self) -> Option<ExprType> {
+        if !self.bump_expected_next(&Token::LessThan) {
+            return None;
+        }
+        self.bump();
+        let generic_type = match self.parse_type() {
+            Some(expr_type) => expr_type,
+            None => return None,
+        };
+        if !self.bump_expected_next(&Token::GratherThan) {
+            return None;
+        }
+        Some(generic_type)
     }
 
     fn token_to_precedence(token: &Token) -> Precedence {
@@ -347,16 +368,6 @@ impl<'a> Parser<'a> {
 
     fn next_token_precedence(&self) -> Precedence {
         Self::token_to_precedence(&self.next_token)
-    }
-
-    fn bump_expected_current(&mut self, token: &Token) -> bool {
-        if self.current_token_is(token) {
-            self.bump();
-            return true;
-        }
-        self.error_handler
-            .set_expected_but_provided_error(token, &self.curr_token);
-        false
     }
 
     fn bump_expected_next(&mut self, token: &Token) -> bool {

@@ -7,10 +7,10 @@ pub type BlockStmt = Vec<Stmt>;
 pub enum ExprType {
     Int,
     Void,
-    Array,
     Float,
     String,
     Boolean,
+    Array(Box<ExprType>),
 }
 
 #[derive(Debug, Clone)]
@@ -38,14 +38,9 @@ pub enum Expr {
 }
 
 #[derive(Debug, Clone)]
-pub struct LetStmtFlags {
-    pub is_array: bool,
-}
-
-#[derive(Debug, Clone)]
 pub enum Stmt {
     Expr(Expr),
-    Let(Identifier, Option<ExprType>, Option<Expr>, LetStmtFlags),
+    Let(Identifier, Option<ExprType>, Option<Expr>),
     Func(Identifier, Vec<(Identifier, ExprType)>, BlockStmt, ExprType),
     Return(Option<Expr>),
     If {

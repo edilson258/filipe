@@ -90,11 +90,10 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
             Object::Null => print!("null"),
             Object::BuiltInFunction(_) => print!("[Builtin Function]"),
             Object::UserDefinedFunction {
-                name,
                 params: _,
                 body: _,
                 return_type: _,
-            } => print!("{}", name),
+            } => print!("{}", arg.value),
             Object::RetVal(val) => print!("{}", val),
             Object::Boolean(val) => print!("{}", val),
             Object::Type(val) => print!("{}", val),
@@ -102,8 +101,11 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
                 start: _,
                 end: _,
                 step: _,
-            } => print!("{}", &arg.value),
-            Object::Array(array, _) => print!("{}", array),
+            } => print!("{}", arg.value),
+            Object::Array {
+                inner,
+                items_type: _,
+            } => print!("{}", inner),
         }
     }
     println!();

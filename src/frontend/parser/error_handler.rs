@@ -1,22 +1,16 @@
 use core::fmt;
 
-use super::super::{
-    ast::{Expr, Literal},
-    token::Token,
-};
+use super::super::token::Token;
 
 #[derive(Clone)]
 pub enum ParserErrorKind {
     SyntaxError,
-    TypeError,
 }
 
 impl fmt::Display for ParserErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ParserErrorKind::SyntaxError => write!(f, "[Syntax Error]"),
-            ParserErrorKind::TypeError => write!(f, "[Type Error]")
-            
         }
     }
 }
@@ -60,28 +54,7 @@ impl ParserErrorHandler {
         Some(self.error.clone().unwrap())
     }
 
-    pub fn set_invalid_left_side_of_assignment_error(&mut self, left: Expr) {
-        match left {
-            Expr::Literal(literal) => {
-                match literal {
-                    Literal::Boolean(val) => {
-                        self.error = Some(ParserError {
-                            kind: ParserErrorKind::SyntaxError,
-                            msg: format!("'{}' is not assignable", val),
-                        });
-                        return;
-                    }
-                    _ => {
-                        self.error = Some(ParserError {
-                            kind: ParserErrorKind::SyntaxError,
-                            msg: format!("cannot assign to literal here. Maybe you meant '==' instead of '='?"),
-                        });
-                        return;
-                    }
-                };
-            }
-            _ => {}
-        }
+    pub fn set_invalid_left_side_of_assignment_error(&mut self) {
         self.error = Some(ParserError {
             kind: ParserErrorKind::SyntaxError,
             msg: format!("Left side of assignment must an identifier"),
@@ -89,16 +62,6 @@ impl ParserErrorHandler {
     }
 
     pub fn set_identifier_error(&mut self, token: &Token) {
-        match token {
-            Token::Func => {
-                self.error = Some(ParserError {
-                    kind: ParserErrorKind::SyntaxError,
-                    msg: format!("'define' keyword cannot be used as identifier"),
-                });
-                return;
-            }
-            _ => {}
-        }
         self.error = Some(ParserError {
             kind: ParserErrorKind::SyntaxError,
             msg: format!("'{token}' cannot be used as identifier"),

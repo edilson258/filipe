@@ -46,12 +46,12 @@ impl Runtime {
 
     fn eval_stmt(&mut self, stmt: Stmt) -> Option<Object> {
         match stmt {
-            Stmt::Let(name, type_, expr, flags) => {
-                eval_let_stmt(self, name, type_, expr, flags);
+            Stmt::Let(Identifier(name), type_, expr) => {
+                eval_let_stmt(self, name, type_, expr);
                 None
             }
-            Stmt::Func(identifier, params, body, ret_type) => {
-                eval_func_def(self, &identifier, &params, &body, &ret_type);
+            Stmt::Func(Identifier(name), params, body, ret_type) => {
+                eval_func_def(self, name, &params, &body, &ret_type);
                 None
             }
             Stmt::Return(expr) => self.eval_return(expr),
@@ -144,11 +144,11 @@ impl Runtime {
         };
 
         if self.is_truthy(evaluated_cond) {
-            return self.eval_block_stmt(&consequence);
+            return Some(self.eval_block_stmt(&consequence));
         }
 
         if alternative.is_some() {
-            return self.eval_block_stmt(&alternative.unwrap());
+            return Some(self.eval_block_stmt(&alternative.unwrap()));
         }
 
         None
@@ -245,78 +245,88 @@ impl Runtime {
     }
 
     fn eval_assign_expr(&mut self, identifier: Identifier, expr: Expr) -> Option<Object> {
-        let Identifier(name) = identifier.clone();
-        if !self.env.borrow().is_declared(&name) {
-            self.error_handler
-                .set_name_error(format!("'{}' is not declared", &name));
-            return None;
-        }
-        let value = match self.eval_expr(expr) {
+        let Identifier(name) = identifier;
+        let old_value = match self.env.borrow().resolve(&name) {
+            Some(object) => object,
+            None => {
+                self.error_handler
+                    .set_name_error(format!("'{}' is not declared", &name));
+                return None;
+            }
+        };
+        let new_value = match self.eval_expr(expr) {
             Some(value) => value,
             None => return None,
         };
 
-        if let Some(Object::Array(_, old_items_type)) = self.resolve_identfier(identifier) {
-            return self.assign_array(name, old_items_type, value);
+        if let Type::Array(Some(old_array_items_type)) = old_value.type_ {
+            self.assign_array(name, *old_array_items_type, new_value);
+            return None;
         }
 
-        let old_value_type = self.env.borrow().get_typeof(&name).unwrap();
-        let new_value_type = object_to_type(&value);
+        let new_value_type = object_to_type(&new_value);
 
-        if old_value_type != new_value_type {
+        if old_value.type_ != new_value_type {
             self.error_handler.set_type_error(format!(
-                "can't assign value of type '{}' with value of type '{}'",
-                old_value_type, new_value_type
+                "'{}' expects value of type '{}' but provided value of type '{}'",
+                name, old_value.type_, new_value_type,
             ));
             return None;
         }
 
-        if !self.env.borrow_mut().update_entry(&name, value) {
-            self.error_handler
-                .set_name_error(format!("'{}' is not assignable", &name));
-        }
+        self.env.borrow_mut().update_entry(&name, new_value);
         None
     }
 
-    fn assign_array(&mut self, name: String, old_type: Type, value: Object) -> Option<Object> {
-        let (new_data, new_type) = match &value {
-            Object::Array(new_data, new_type) => (new_data, new_type),
+    fn assign_array(
+        &mut self,
+        name: String,
+        old_array_items_type: Type,
+        new_array: Object,
+    ) -> Option<Object> {
+        let new_array_items_type = match object_to_type(&new_array) {
+            Type::Array(opt_type) => opt_type,
             _ => {
-                println!("rhs is not array");
+                self.error_handler.set_type_error(format!(
+                    "'{}' expects value of type Array<{}>",
+                    name, old_array_items_type
+                ));
                 return None;
             }
         };
 
-        if new_type == &Type::Unknown {
-            self.env
-                .borrow_mut()
-                .update_entry(&name, Object::Array(new_data.to_owned(), old_type));
+        if new_array_items_type.is_none() {
+            self.env.borrow_mut().update_entry(
+                &name,
+                Object::Array {
+                    inner: FilipeArray::new(vec![]),
+                    items_type: Some(old_array_items_type),
+                },
+            );
             return None;
         }
 
-        if new_type != &old_type {
+        let new_array_items_type = *new_array_items_type.unwrap();
+
+        if &new_array_items_type != &old_array_items_type {
             self.error_handler.set_type_error(format!(
-                "Assign array of type '{}' to array '{}' which has type '{}'",
-                new_type, name, old_type
+                "'{}' expects array of type '{}' but provided array of type '{}'",
+                name, old_array_items_type, new_array_items_type
             ));
             return None;
         }
 
-        self.env.borrow_mut().update_entry(&name, value);
+        self.env.borrow_mut().update_entry(&name, new_array);
         None
     }
 
-    fn eval_block_stmt(&mut self, block: &BlockStmt) -> Option<Object> {
-        let mut res = None;
-
+    fn eval_block_stmt(&mut self, block: &BlockStmt) -> Object {
         for stmt in block {
-            match self.eval_stmt(stmt.clone()) {
-                Some(Object::RetVal(object)) => return Some(*object),
-                object => res = object,
+            if let Some(Object::RetVal(object)) = self.eval_stmt(stmt.clone()) {
+                return *object;
             }
         }
-
-        res
+        Object::Null
     }
 
     fn eval_infix_expr(&mut self, lhs: Expr, infix: Infix, rhs: Expr) -> Option<Object> {
@@ -447,7 +457,10 @@ impl Runtime {
 
     fn eval_array_literal(&mut self, array_literal: Vec<Expr>) -> Option<Object> {
         if array_literal.is_empty() {
-            return Some(Object::Array(FilipeArray::new(vec![]), Type::Unknown));
+            return Some(Object::Array {
+                inner: FilipeArray::new(vec![]),
+                items_type: None,
+            });
         }
 
         let mut expr_array = array_literal.to_owned();
@@ -474,7 +487,11 @@ impl Runtime {
             }
             objects.push(item);
         }
-        Some(Object::Array(FilipeArray::new(objects), first_item_type))
+
+        return Some(Object::Array {
+            inner: FilipeArray::new(objects),
+            items_type: Some(first_item_type),
+        });
     }
 
     fn resolve_identfier(&mut self, identifier: Identifier) -> Option<Object> {
@@ -488,12 +505,5 @@ impl Runtime {
             }
         };
         Some(object.value)
-    }
-
-    fn expr_to_identifier(expr: &Expr) -> Option<Identifier> {
-        match expr {
-            Expr::Identifier(ident) => Some(ident.clone()),
-            _ => None,
-        }
     }
 }
