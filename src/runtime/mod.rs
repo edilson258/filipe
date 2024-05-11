@@ -9,16 +9,14 @@ mod type_system;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::frontend::ast::*;
-use context::Context;
+use context::{Context, ContextType};
 use evaluators::func_call_evaluator::eval_call_expr;
 use evaluators::func_def_evaluator::eval_func_def;
 use evaluators::let_evaluator::eval_let_stmt;
 use object::Object;
 use runtime_error::RuntimeErrorHandler;
 use stdlib::FilipeArray;
-use type_system::{has_same_type, object_to_type, Type};
-
-use self::context::ContextType;
+use type_system::{object_to_type, Type};
 
 pub struct Runtime {
     env: Rc<RefCell<Context>>,
@@ -354,7 +352,7 @@ impl Runtime {
         let lhs = lhs.unwrap();
         let rhs = rhs.unwrap();
 
-        if !has_same_type(&lhs, &rhs) {
+        if object_to_type(&lhs) != object_to_type(&rhs) {
             self.error_handler.set_type_error(format!(
                 "'{}' operation not allowed between types {} and {}",
                 infix,

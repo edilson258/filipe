@@ -27,10 +27,6 @@ pub fn expr_type_to_object_type(var_type: &ExprType) -> Type {
     }
 }
 
-pub fn has_same_type(lhs: &Object, rhs: &Object) -> bool {
-    object_to_type(lhs) == object_to_type(rhs)
-}
-
 pub fn object_to_type(object: &Object) -> Type {
     match object {
         Object::Null => Type::Null,

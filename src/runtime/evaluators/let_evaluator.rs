@@ -30,7 +30,20 @@ pub fn eval_let_stmt(
 
     let expected_type = expr_type_to_object_type(&expr_type.clone().unwrap());
 
+    if Type::Void == expected_type {
+        rt.error_handler
+            .set_type_error(format!("Can't declared var of type 'void'"));
+        return;
+    }
+
     if let Type::Array(Some(generic)) = expected_type.clone() {
+
+        if Type::Void == *generic {
+            rt.error_handler
+                .set_type_error(format!("Can't declared array of type 'void'"));
+            return;
+        }
+
         if expr.is_none() {
             add_to_env(
                 rt,
