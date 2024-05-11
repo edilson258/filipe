@@ -3,5 +3,5 @@
 if [ $# -eq 0 ]; then
     cargo run
 else
-    cargo run run "$@" 2> >(grep -v "Finished dev" >&2) | grep -v "Running"
+    cargo run run "$@"
 fi
