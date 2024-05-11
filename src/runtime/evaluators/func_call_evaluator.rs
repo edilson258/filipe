@@ -95,14 +95,14 @@ pub fn eval_call_expr(
 
     e.env = Rc::new(RefCell::new(fn_scope));
     let returned_value = e.eval_block_stmt(&body);
-    let provided_type = object_to_type(&returned_value);
+    let returned_value_type = object_to_type(&returned_value);
 
-    if (expected_ret_type != provided_type)
-        && !is_types_equivalents(&expected_ret_type, &provided_type)
+    if (expected_ret_type != returned_value_type)
+        && !is_types_equivalents(&expected_ret_type, &returned_value_type)
     {
         e.error_handler.set_type_error(format!(
             "Function '{}' must return '{}' but found '{}'",
-            fn_name, expected_ret_type, provided_type
+            fn_name, expected_ret_type, returned_value_type,
         ));
         return None;
     }

@@ -335,7 +335,7 @@ impl Runtime {
     fn eval_block_stmt(&mut self, block: &BlockStmt) -> Object {
         for stmt in block {
             if let Some(Object::RetVal(object)) = self.eval_stmt(stmt.clone()) {
-                return *object;
+                return Object::RetVal(object);
             }
         }
         Object::Null
