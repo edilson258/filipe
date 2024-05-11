@@ -1,9 +1,8 @@
 use super::object::{BuiltInFuncReturnValue, Object, ObjectInfo};
 use super::runtime_error::{ErrorKind, RuntimeError};
-use super::stdlib::module::Module;
+use crate::stdlib::modules::math::module_math;
 use super::type_system::Type;
 use std::collections::HashMap;
-use std::f64::consts::PI;
 
 pub fn builtins() -> HashMap<String, ObjectInfo> {
     let mut builtin_list: HashMap<String, ObjectInfo> = HashMap::new();
@@ -11,7 +10,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "print".to_string(),
         ObjectInfo {
-            is_assignable: false,
+            is_mut: false,
             type_: Type::Function,
             value: Object::BuiltInFunction(filipe_print),
         },
@@ -20,7 +19,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "exit".to_string(),
         ObjectInfo {
-            is_assignable: false,
+            is_mut: false,
             type_: Type::Function,
             value: Object::BuiltInFunction(filipe_exit),
         },
@@ -29,7 +28,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "len".to_string(),
         ObjectInfo {
-            is_assignable: false,
+            is_mut: false,
             type_: Type::Function,
             value: Object::BuiltInFunction(filipe_len),
         },
@@ -38,7 +37,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "typeof".to_string(),
         ObjectInfo {
-            is_assignable: false,
+            is_mut: false,
             type_: Type::Function,
             value: Object::BuiltInFunction(filipe_typeof),
         },
@@ -47,7 +46,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "range".to_string(),
         ObjectInfo {
-            is_assignable: false,
+            is_mut: false,
             type_: Type::Function,
             value: Object::BuiltInFunction(filipe_range),
         },
@@ -56,7 +55,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "true".to_string(),
         ObjectInfo {
-            is_assignable: false,
+            is_mut: false,
             type_: Type::Boolean,
             value: Object::Boolean(true),
         },
@@ -65,7 +64,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "false".to_string(),
         ObjectInfo {
-            is_assignable: false,
+            is_mut: false,
             type_: Type::Boolean,
             value: Object::Boolean(false),
         },
@@ -74,7 +73,7 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "null".to_string(),
         ObjectInfo {
-            is_assignable: false,
+            is_mut: false,
             type_: Type::Null,
             value: Object::Null,
         },
@@ -83,44 +82,13 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     builtin_list.insert(
         "Math".to_string(),
         ObjectInfo {
-            is_assignable: false,
+            is_mut: false,
             type_: Type::Module,
             value: module_math(),
         },
     );
 
     builtin_list
-}
-
-fn module_math() -> Object {
-    let mut math_fields: HashMap<String, Object> = HashMap::new();
-    math_fields.insert("PI".to_string(), Object::Float(PI));
-    math_fields.insert(
-        "sqrt".to_string(),
-        Object::BuiltInFunction(module_math_sqrt),
-    );
-    Object::Module(Module::make("Math".to_string(), math_fields))
-}
-
-fn module_math_sqrt(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
-    if args.len() != 1 {
-        return BuiltInFuncReturnValue::Error(RuntimeError {
-            kind: ErrorKind::ArgumentError,
-            msg: format!(
-                "Math.sqrt(x) expects 1 argument but provided {}",
-                args.len()
-            ),
-        });
-    }
-
-    match args[0].value {
-        Object::Int(x) => BuiltInFuncReturnValue::Object(Object::Float(f64::sqrt(x as f64))),
-        Object::Float(x) => BuiltInFuncReturnValue::Object(Object::Float(f64::sqrt(x))),
-        _ => BuiltInFuncReturnValue::Error(RuntimeError {
-            kind: ErrorKind::ArgumentError,
-            msg: format!("Math.sqrt(x) expects argument of type int or float"),
-        }),
-    }
 }
 
 fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {

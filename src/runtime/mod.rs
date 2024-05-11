@@ -2,23 +2,22 @@ pub mod context;
 mod evaluators;
 pub mod flstdlib;
 pub mod object;
-mod runtime_error;
-mod stdlib;
-mod type_system;
+pub mod runtime_error;
+pub mod type_system;
 
 use std::{cell::RefCell, rc::Rc};
 
+use self::object::ObjectInfo;
 use crate::frontend::ast::*;
+use crate::stdlib::modules::Module;
+use crate::stdlib::FilipeArray;
 use context::{Context, ContextType};
 use evaluators::func_call_evaluator::eval_call_expr;
 use evaluators::func_def_evaluator::eval_func_def;
 use evaluators::let_evaluator::eval_let_stmt;
 use object::Object;
 use runtime_error::RuntimeErrorHandler;
-use stdlib::FilipeArray;
 use type_system::{object_to_type, Type};
-
-use self::{object::ObjectInfo, stdlib::module::Module};
 
 pub struct Runtime {
     env: Rc<RefCell<Context>>,
@@ -267,7 +266,7 @@ impl Runtime {
         for arg in args {
             let arg = match self.eval_expr(arg) {
                 Some(object) => ObjectInfo {
-                    is_assignable: true,
+                    is_mut: true,
                     type_: object_to_type(&object),
                     value: object,
                 },
@@ -373,7 +372,7 @@ impl Runtime {
             }
         };
 
-        if !old_value.is_assignable {
+        if !old_value.is_mut {
             self.error_handler
                 .set_name_error(format!("'{}' is not assignable", name));
             return None;

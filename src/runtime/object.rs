@@ -1,8 +1,8 @@
 use core::fmt;
 
 use super::runtime_error::RuntimeError;
-use super::stdlib::module::Module;
-use super::stdlib::FilipeArray;
+use crate::stdlib::modules::Module;
+use crate::stdlib::FilipeArray;
 use super::type_system::Type;
 use super::BlockStmt;
 
@@ -43,12 +43,12 @@ pub enum Object {
         end: i64,
         step: i64,
     },
-    Module(Module)
+    Module(Module),
 }
 
 #[derive(Clone, Debug)]
 pub struct ObjectInfo {
-    pub is_assignable: bool,
+    pub is_mut: bool,
     pub type_: Type,
     pub value: Object,
 }
@@ -72,7 +72,7 @@ impl fmt::Display for Object {
             } => write!(f, "[User Defined Function]"),
             Self::Array {
                 inner,
-                items_type:_,
+                items_type: _,
             } => write!(f, "{}", inner),
             Self::Module(m) => write!(f, "[Module] {}", m.name),
         }
@@ -93,10 +93,10 @@ impl fmt::Display for Type {
             Self::Range => write!(f, "{}", self),
             Self::Array(items_type) => {
                 if let Some(items_type) = items_type {
-                    return write!(f, "Array<{}>", items_type)
+                    return write!(f, "Array<{}>", items_type);
                 }
                 write!(f, "Array<any>")
-            },
+            }
             Self::Module => write!(f, "[Module]"),
         }
     }

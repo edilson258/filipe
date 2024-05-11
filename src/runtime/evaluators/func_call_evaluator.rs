@@ -33,7 +33,7 @@ pub fn eval_call_expr(
     for arg in provided_args {
         let arg = match e.eval_expr(arg) {
             Some(object) => ObjectInfo {
-                is_assignable: true,
+                is_mut: true,
                 type_: object_to_type(&object),
                 value: object,
             },

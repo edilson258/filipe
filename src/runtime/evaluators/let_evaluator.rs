@@ -1,7 +1,9 @@
-use crate::runtime::{
-    object_to_type, stdlib::FilipeArray, type_system::expr_type_to_object_type, Expr, ExprType,
-    Object, Runtime, Type,
-};
+use crate::frontend::ast::{Expr, ExprType};
+use crate::runtime::type_system::expr_type_to_object_type;
+use crate::runtime::type_system::Type;
+use crate::runtime::Runtime;
+use crate::runtime::{object_to_type, Object};
+use crate::stdlib::FilipeArray;
 
 pub fn eval_let_stmt(
     rt: &mut Runtime,
@@ -37,7 +39,6 @@ pub fn eval_let_stmt(
     }
 
     if let Type::Array(Some(generic)) = expected_type.clone() {
-
         if Type::Void == *generic {
             rt.error_handler
                 .set_type_error(format!("Can't declared array of type 'void'"));

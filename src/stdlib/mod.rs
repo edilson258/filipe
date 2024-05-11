@@ -1,7 +1,7 @@
-pub mod module;
-use core::fmt;
+pub mod modules;
 
-use super::object::Object;
+use crate::runtime::object::Object;
+use core::fmt;
 
 #[derive(Clone, Debug)]
 pub struct FilipeArray {
