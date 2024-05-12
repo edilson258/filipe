@@ -1,5 +1,6 @@
 use crate::runtime::object::{Object, ObjectInfo};
 use crate::runtime::type_system::Type;
+use crate::stdlib::modules::{ModulesManager};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -15,6 +16,7 @@ pub struct Context {
     type_: ContextType,
     store: HashMap<String, ObjectInfo>,
     parent: Option<Rc<RefCell<Context>>>,
+    pub modules: ModulesManager,
 }
 
 impl Context {
@@ -23,6 +25,7 @@ impl Context {
             type_,
             store: HashMap::new(),
             parent: Some(parent),
+            modules: ModulesManager::setup(),
         }
     }
 
@@ -31,6 +34,7 @@ impl Context {
             type_: ContextType::Global,
             store,
             parent: None,
+            modules: ModulesManager::setup(),
         }
     }
 

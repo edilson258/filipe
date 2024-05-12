@@ -67,8 +67,22 @@ impl<'a> Parser<'a> {
             Token::Return => self.parse_return_stmt(),
             Token::If => parse_if_stmt(self),
             Token::For => parse_forloop_stmt(self),
+            Token::Import => self.parse_import_stmt(),
             _ => self.parse_expr_stmt(),
         }
+    }
+
+    fn parse_import_stmt(&mut self) -> Option<Stmt> {
+        self.bump();
+        let target = match self.curr_token.clone() {
+            Token::Identifier(val) => val,
+            _ => {
+                self.error_handler.set_error(ParserErrorKind::SyntaxError, format!("Missing module name"));
+                return None;
+            }
+        };
+
+        Some(Stmt::Import(target))
     }
 
     fn parse_block_stmt(&mut self) -> Option<Vec<Stmt>> {

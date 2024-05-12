@@ -159,6 +159,7 @@ impl<'a> Lexer<'a> {
             "in" => Token::In,
             "void" => Token::TypeVoid,
             "Array" => Token::ClassArray,
+            "import" => Token::Import,
             _ => Token::Identifier(literal),
         }
     }

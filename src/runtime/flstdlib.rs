@@ -1,6 +1,5 @@
 use super::object::{BuiltInFuncReturnValue, Object, ObjectInfo};
 use super::runtime_error::{ErrorKind, RuntimeError};
-use crate::stdlib::modules::math::module_math;
 use super::type_system::Type;
 use std::collections::HashMap;
 
@@ -67,15 +66,6 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
             is_mut: false,
             type_: Type::Null,
             value: Object::Null,
-        },
-    );
-
-    builtin_list.insert(
-        "Math".to_string(),
-        ObjectInfo {
-            is_mut: false,
-            type_: Type::Module,
-            value: module_math(),
         },
     );
 

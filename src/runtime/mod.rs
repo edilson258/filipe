@@ -68,7 +68,19 @@ impl Runtime {
                 iterable,
                 block,
             } => self.eval_forloop_stmt(cursor, iterable, block),
+            Stmt::Import(target) => self.eval_import_stmt(target),
         }
+    }
+
+    fn eval_import_stmt(&mut self, target: String) -> Option<Object> {
+        let m = self.env.borrow().modules.access(&target);
+
+        if m.is_none() {
+            self.error_handler.set_name_error(format!("No module named '{}'", target));
+            return None;
+        }
+        self.env.borrow_mut().set("Math".to_string(), Type::Module, m.unwrap()(), false);
+        None
     }
 
     fn eval_forloop_stmt(

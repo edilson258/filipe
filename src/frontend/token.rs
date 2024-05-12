@@ -45,6 +45,7 @@ pub enum Token {
     Else,
     Func,
     Null,
+    Import,
     Return,
     ClassArray,
     Identifier(String),
@@ -105,6 +106,7 @@ impl fmt::Display for Token {
             Self::TypeVoid => write!(f, "[Type Annotation] void"),
             Self::ClassArray => write!(f, "[Built-in Class] Array"),
             Self::Dot => write!(f, "."),
+            Self::Import => write!(f, "import"),
         }
     }
 }

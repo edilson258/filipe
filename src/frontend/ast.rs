@@ -54,6 +54,7 @@ pub enum Stmt {
         iterable: Expr,
         block: BlockStmt,
     },
+    Import(String),
 }
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
