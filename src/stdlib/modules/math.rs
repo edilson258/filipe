@@ -3,7 +3,6 @@ use crate::runtime::{
     object::{BuiltInFuncReturnValue, Object, ObjectInfo},
     runtime_error::{ErrorKind, RuntimeError},
 };
-
 use std::{collections::HashMap, f64::consts::PI};
 
 pub fn module_math() -> Object {

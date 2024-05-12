@@ -7,9 +7,10 @@ pub mod type_system;
 
 use std::{cell::RefCell, rc::Rc};
 
+use self::evaluators::field_access::eval_field_access;
 use self::object::ObjectInfo;
 use crate::frontend::ast::*;
-use crate::stdlib::modules::Module;
+use crate::stdlib::primitives::make_string;
 use crate::stdlib::FilipeArray;
 use context::{Context, ContextType};
 use evaluators::func_call_evaluator::eval_call_expr;
@@ -184,95 +185,7 @@ impl Runtime {
             Expr::Prefix(prefix, expr) => self.eval_prefix_expr(prefix, *expr),
             Expr::Postfix(expr, postfix) => self.eval_postfix_expr(*expr, postfix),
             Expr::Assign(identifier, expr) => self.eval_assign_expr(identifier, *expr),
-            Expr::FieldAcc(src, target) => self.eval_field_access(*src, *target),
-        }
-    }
-
-    fn eval_field_access(&mut self, src: Expr, target: Expr) -> Option<Object> {
-        let src = match self.eval_expr(src) {
-            Some(object) => object,
-            None => return None,
-        };
-
-        match src {
-            Object::Module(module) => self.eval_module_field_acc(module, target),
-            _ => {
-                self.error_handler
-                    .set_sematic("Member access impl for modules only".to_string());
-                return None;
-            }
-        }
-    }
-
-    fn eval_module_field_acc(&mut self, module: Module, target: Expr) -> Option<Object> {
-        let target = match target {
-            Expr::Identifier(Identifier(name)) => name,
-            Expr::Call(fn_name_expr, args) => {
-                return self.eval_module_field_acc_func(module, *fn_name_expr, args)
-            }
-            _ => {
-                self.error_handler
-                    .set_sematic("Can only access by identifier".to_string());
-                return None;
-            }
-        };
-
-        match module.acc_field(&target) {
-            Some(field) => Some(field),
-            None => {
-                self.error_handler.set_name_error(format!(
-                    "Module '{}' has no field '{}'",
-                    module.name, target
-                ));
-                return None;
-            }
-        }
-    }
-
-    fn eval_module_field_acc_func(
-        &mut self,
-        module: Module,
-        fn_name_expr: Expr,
-        args: Vec<Expr>,
-    ) -> Option<Object> {
-        let fn_name = match fn_name_expr {
-            Expr::Identifier(Identifier(name)) => name,
-            _ => {
-                self.error_handler
-                    .set_sematic(format!("Missing method name"));
-                return None;
-            }
-        };
-
-        let fn_obj = match module.acc_field(&fn_name) {
-            Some(object) => object,
-            None => {
-                self.error_handler.set_name_error(format!(
-                    "No method '{}' associated with module '{}'",
-                    fn_name, module.name
-                ));
-                return None;
-            }
-        };
-
-        let evaluated_args = match self.eval_fn_call_args(args) {
-            Some(evaluated_args) => evaluated_args,
-            None => return None,
-        };
-
-        match fn_obj {
-            Object::BuiltInFunction(method) => match method(evaluated_args) {
-                object::BuiltInFuncReturnValue::Object(object) => Some(object),
-                object::BuiltInFuncReturnValue::Error(err) => {
-                    self.error_handler.set_error(err.kind, err.msg);
-                    return None;
-                }
-            },
-            _ => {
-                self.error_handler
-                    .set_type_error(format!("'{}' is not callable", fn_name));
-                return None;
-            }
+            Expr::FieldAcc(src, target) => eval_field_access(self, *src, *target),
         }
     }
 
@@ -508,7 +421,7 @@ impl Runtime {
             }
             Object::String(lval) => {
                 if let Object::String(rval) = rhs {
-                    return Some(self.eval_infix_string_expr(lval, infix, rval));
+                    return Some(self.eval_infix_string_expr(lval.value, infix, rval.value));
                 }
                 None
             }
@@ -524,7 +437,7 @@ impl Runtime {
 
     fn eval_infix_string_expr(&mut self, lhs: String, infix: Infix, rhs: String) -> Object {
         match infix {
-            Infix::Plus => Object::String(lhs.clone() + &rhs),
+            Infix::Plus => Object::String(make_string(lhs + &rhs)),
             Infix::NotEqual => Object::Boolean(lhs != rhs),
             Infix::Equal => Object::Boolean(lhs == rhs),
             _ => {
@@ -589,7 +502,7 @@ impl Runtime {
 
     fn eval_literal_expr(&mut self, literal: Literal) -> Option<Object> {
         match literal {
-            Literal::String(val) => Some(Object::String(val)),
+            Literal::String(val) => Some(Object::String(make_string(val))),
             Literal::Boolean(val) => Some(Object::Boolean(val)),
             Literal::Null => Some(Object::Null),
             Literal::Int(val) => Some(Object::Int(val)),

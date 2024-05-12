@@ -26,15 +26,6 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     );
 
     builtin_list.insert(
-        "len".to_string(),
-        ObjectInfo {
-            is_mut: false,
-            type_: Type::Function,
-            value: Object::BuiltInFunction(filipe_len),
-        },
-    );
-
-    builtin_list.insert(
         "typeof".to_string(),
         ObjectInfo {
             is_mut: false,
@@ -96,7 +87,7 @@ fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
         match &arg.value {
             Object::Int(val) => print!("{}", val),
             Object::Float(val) => print!("{}", val),
-            Object::String(val) => print!("{}", val),
+            Object::String(val) => print!("{}", val.value),
             Object::Null => print!("null"),
             Object::BuiltInFunction(_) => print!("[Builtin Function]"),
             Object::UserDefinedFunction {
@@ -143,23 +134,6 @@ fn filipe_exit(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
         _ => BuiltInFuncReturnValue::Error(RuntimeError {
             kind: ErrorKind::ArgumentError,
             msg: "'exit' only accepts an integer argument".to_string(),
-        }),
-    }
-}
-
-fn filipe_len(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
-    if args.len() != 1 {
-        return BuiltInFuncReturnValue::Error(RuntimeError {
-            kind: ErrorKind::TypeError,
-            msg: format!("'len' expects 1 arg but {} were provided", args.len()),
-        });
-    }
-
-    match args[0].value.clone() {
-        Object::String(val) => BuiltInFuncReturnValue::Object(Object::Int(val.len() as i64)),
-        _ => BuiltInFuncReturnValue::Error(RuntimeError {
-            kind: ErrorKind::TypeError,
-            msg: format!("'len' only accepts iterable types"),
         }),
     }
 }

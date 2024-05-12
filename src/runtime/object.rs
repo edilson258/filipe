@@ -4,6 +4,7 @@ use super::runtime_error::RuntimeError;
 use super::type_system::Type;
 use super::BlockStmt;
 use crate::stdlib::modules::Module;
+use crate::stdlib::primitives::Primitive;
 use crate::stdlib::FilipeArray;
 
 pub enum BuiltInFuncReturnValue {
@@ -26,7 +27,7 @@ pub enum Object {
     Int(i64),
     Float(f64),
     Boolean(bool),
-    String(String),
+    String(Primitive<String>),
     RetVal(Box<Object>),
     Array {
         inner: FilipeArray,
@@ -92,7 +93,7 @@ pub struct ObjectInfo {
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::String(val) => write!(f, "'{}'", val),
+            Self::String(val) => write!(f, "\"{}\"", val.value),
             Self::Int(val) => write!(f, "{}", val),
             Self::Float(val) => write!(f, "{}", val),
             Self::BuiltInFunction(_) => write!(f, "[Builtin Function]"),
