@@ -19,12 +19,12 @@ pub fn parse_let_stmt(p: &mut Parser) -> Option<Stmt> {
             Some(type_) => type_,
             None => return None,
         };
-        p.bump();
 
-        if !p.current_token_is(&Token::Equal) {
+        if !p.next_token_is(&Token::Equal) {
             return Some(Stmt::Let(Identifier(var_name), Some(var_type), None));
         }
 
+        p.bump();
         p.bump();
         let expr = match p.parse_expr(Precedence::Lowest) {
             Some(expr) => expr,
