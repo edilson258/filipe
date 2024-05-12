@@ -1,3 +1,18 @@
 import IO
 
-IO.puts(100)
+define main(): void {
+  let nums = [34, 35, 69, 420]
+  let fruits = ["Apple", "Orange"]
+  let points: Array<float> = []
+
+  IO.puts("Nums: ", nums)
+
+  IO.puts("Fruits:")
+  for f in fruits {
+    IO.puts(f)
+  }
+
+  IO.puts("Points: ", points)
+}
+
+main()

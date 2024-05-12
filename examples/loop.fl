@@ -1,14 +1,14 @@
-
+import IO
 
 for x in range(0, 10, 2) {
-    print("step(2): ", x)
+    IO.puts("step(2): ", x)
 }
-print("-----------------")
+IO.puts("-----------------")
 
 for x in range(0, 10, 3) {
-    print("step(3): ", x)
+    IO.puts("step(3): ", x)
 }
-print("-----------------")
+IO.puts("-----------------")
 for x in range(0, 10) {
-    print("step(normal): ", x)
+    IO.puts("step(normal): ", x)
 }

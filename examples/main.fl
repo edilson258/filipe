@@ -1,7 +1,9 @@
-print("Hello, World!")
+import IO
+
+IO.puts("Hello, World!")
 
 define sayHelloTo(name: string): void {
-  print("Hello, ", name)
+  IO.puts("Hello, ", name)
 }
 
 sayHelloTo("Edilson")
@@ -14,29 +16,29 @@ define sumTwoInts(x: int, y: int): int {
   return x + y
 }
 
-print("34 + 35 = ", sumTwoInts(x, y))
+IO.puts("34 + 35 = ", sumTwoInts(x, y))
 
 for x in range(0, 10) {
   if x % 2 == 0 {
-    print(x, " is even")
+    IO.puts(x, " is even")
   } else {
-    print(x, " is odd")
+    IO.puts(x, " is odd")
   }
 }
 
 if "hello" == "hell0" {
-  print("hello and hell0 are equal")
+  IO.puts("hello and hell0 are equal")
 }
 
-print("10 has type ", typeof(10))
-print("10.6 has type ", typeof(10.6))
+IO.puts("10 has type ", typeof(10))
+IO.puts("10.6 has type ", typeof(10.6))
 
-print("Length of 'Hi Mom' is ", "Hi Mom".length)
+IO.puts("Length of 'Hi Mom' is ", "Hi Mom".length)
 
 let xs = [1, 2, 3]
 let ys: Array<int> = []
 ys = [10, 20, 30]
 let zs: Array<boolean> = [true, false]
 zs = [true, true, true, true]
-print(xs, ys, zs)
+IO.puts(xs, ys, zs)
 zs = []
