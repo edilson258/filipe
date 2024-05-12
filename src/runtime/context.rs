@@ -1,6 +1,6 @@
 use crate::runtime::object::{Object, ObjectInfo};
 use crate::runtime::type_system::Type;
-use crate::stdlib::modules::{ModulesManager};
+use crate::stdlib::modules::ModulesManager;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]

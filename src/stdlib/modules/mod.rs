@@ -1,6 +1,7 @@
 pub mod math;
+pub mod io;
 
-use self::math::module_math;
+use self::{io::module_io, math::module_math};
 
 use super::FieldsManager;
 use crate::runtime::object::Object;
@@ -32,6 +33,7 @@ impl ModulesManager {
     pub fn setup() -> Self {
         let mut modules: HashMap<String, ModInit> = HashMap::new();
         modules.insert("Math".to_string(), module_math);
+        modules.insert("IO".to_string(), module_io);
         Self { modules }
     }
 

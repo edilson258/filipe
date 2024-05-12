@@ -1,0 +1,7 @@
+import IO
+
+define main(): void {
+  IO.puts("Hello, world!")
+}
+
+main()

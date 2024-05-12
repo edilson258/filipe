@@ -79,7 +79,7 @@ impl Runtime {
             self.error_handler.set_name_error(format!("No module named '{}'", target));
             return None;
         }
-        self.env.borrow_mut().set("Math".to_string(), Type::Module, m.unwrap()(), false);
+        self.env.borrow_mut().set(target, Type::Module, m.unwrap()(), false);
         None
     }
 
