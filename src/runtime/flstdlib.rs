@@ -7,15 +7,6 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     let mut builtin_list: HashMap<String, ObjectInfo> = HashMap::new();
 
     builtin_list.insert(
-        "print".to_string(),
-        ObjectInfo {
-            is_mut: false,
-            type_: Type::Function,
-            value: Object::BuiltInFunction(filipe_print),
-        },
-    );
-
-    builtin_list.insert(
         "exit".to_string(),
         ObjectInfo {
             is_mut: false,
@@ -70,38 +61,6 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     );
 
     builtin_list
-}
-
-fn filipe_print(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
-    for arg in args {
-        match &arg.value {
-            Object::Int(val) => print!("{}", val),
-            Object::Float(val) => print!("{}", val),
-            Object::String(val) => print!("{}", val.value),
-            Object::Null => print!("null"),
-            Object::BuiltInFunction(_) => print!("[Builtin Function]"),
-            Object::UserDefinedFunction {
-                params: _,
-                body: _,
-                return_type: _,
-            } => print!("{}", arg.value),
-            Object::RetVal(val) => print!("{}", val),
-            Object::Boolean(val) => print!("{}", val),
-            Object::Type(val) => print!("{}", val),
-            Object::Range {
-                start: _,
-                end: _,
-                step: _,
-            } => print!("{}", arg.value),
-            Object::Array {
-                inner,
-                items_type: _,
-            } => print!("{}", inner),
-            Object::Module(_) => print!("{}", arg.value),
-        }
-    }
-    println!();
-    BuiltInFuncReturnValue::Object(Object::Null)
 }
 
 fn filipe_exit(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
