@@ -95,7 +95,12 @@ pub fn eval_call_expr(
 
     e.env = Rc::new(RefCell::new(fn_scope));
     let returned_value = e.eval_block_stmt(&body);
-    let returned_value_type = returned_value.ask_type();
+
+    if e.error_handler.has_error() {
+        return None;
+    }
+
+    let returned_value_type = returned_value.clone().unwrap_or(Object::Null).ask_type();
 
     if (expected_ret_type != returned_value_type)
         && !is_types_equivalents(&expected_ret_type, &returned_value_type)
@@ -108,7 +113,7 @@ pub fn eval_call_expr(
     }
 
     e.env = global_scope;
-    Some(returned_value)
+    returned_value
 }
 
 fn is_types_equivalents(lhs: &Type, rhs: &Type) -> bool {

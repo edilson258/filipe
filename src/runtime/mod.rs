@@ -109,10 +109,22 @@ impl Runtime {
             .set(cursor.clone(), Type::Int, Object::Int(start), true);
 
         for _ in (start..end).step_by(step as usize) {
-            match self.eval_block_stmt(&block) {
-                Object::RetVal(object) => return Some(Object::RetVal(object)),
+            let evalted_block = self.eval_block_stmt(&block);
+
+            if self.error_handler.has_error() {
+                return None;
+            }
+
+            if evalted_block.is_none() {
+                continue;
+            }
+
+            match evalted_block.unwrap() {
+                Object::RetVal(val) => return Some(Object::RetVal(val)),
                 _ => {}
             }
+
+            // update counter
             let old_val = match self.env.borrow().resolve(&cursor).unwrap().value {
                 Object::Int(val) => val,
                 _ => return None,
@@ -152,11 +164,11 @@ impl Runtime {
         self.env = Rc::new(RefCell::new(ifelse_scope));
 
         if self.is_truthy(evaluated_cond) {
-            return Some(self.eval_block_stmt(&consequence));
+            return self.eval_block_stmt(&consequence);
         }
 
         if alternative.is_some() {
-            return Some(self.eval_block_stmt(&alternative.unwrap()));
+            return self.eval_block_stmt(&alternative.unwrap());
         }
 
         self.env = parent_scope;
@@ -435,7 +447,7 @@ impl Runtime {
 
         let new_array_items_type = *new_array_items_type.unwrap();
 
-        if &new_array_items_type != &old_array_items_type {
+        if new_array_items_type != old_array_items_type {
             self.error_handler.set_type_error(format!(
                 "'{}' expects array of type '{}' but provided array of type '{}'",
                 name, old_array_items_type, new_array_items_type
@@ -447,13 +459,17 @@ impl Runtime {
         None
     }
 
-    fn eval_block_stmt(&mut self, block: &BlockStmt) -> Object {
+    fn eval_block_stmt(&mut self, block: &BlockStmt) -> Option<Object> {
         for stmt in block {
             if let Some(Object::RetVal(object)) = self.eval_stmt(stmt.clone()) {
-                return Object::RetVal(object);
+                return Some(Object::RetVal(object));
+            }
+
+            if self.error_handler.has_error() {
+                return None;
             }
         }
-        Object::Null
+        Some(Object::Null)
     }
 
     fn eval_infix_expr(&mut self, lhs: Expr, infix: Infix, rhs: Expr) -> Option<Object> {
