@@ -7,7 +7,7 @@ Filipe still primitive and limited although it has support for:
 - Arithmetic operations
 - variables declaration
 - if-else statments
-- for-loop statments
+- loop statments
 - Native Data types `int`, `float`, `boolean`, `string`, `null`
 - Built-in function `len`, `typeof`, `print`
 - User defined functions
@@ -20,7 +20,13 @@ Filipe was design to be a high level programming language and beginner friendly,
 1. hello world
 
 ```python
-print("Hello, world!")
+import IO
+
+define main(): void {
+  IO.puts("Hello, world!")
+}
+
+main()
 ```
 
 2. more examples...
@@ -32,20 +38,24 @@ let height: float = 1.86
 let favoriteLangs = ["Haskell", "Ocaml", "Rust"]
 
 if height >= 1.90 {
-    print(name, " is tall above avg.")
+    IO.puts(name, " is tall above avg.")
 } else {
-    print(name, " isn't so much tall")
+    IO.puts(name, " isn't so much tall")
 }
 
 for x in range(0, 10) {
     if x % 2 == 0 {
-        print(x, " is even")
+        IO.puts(x, " is even")
     }
 }
 
-print(name)
-print(height)
-print("Favorite prog. lang.: ", favoriteLangs)
+IO.puts(name)
+IO.puts(height)
+
+IO.puts("Favorite prog. lang.: ")
+for lang in favoriteLangs {
+    IO.puts(lang)
+}
 
 ```
 
