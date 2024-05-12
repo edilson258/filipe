@@ -3,7 +3,7 @@ use crate::runtime::type_system::expr_type_to_object_type;
 use crate::runtime::type_system::Type;
 use crate::runtime::Runtime;
 use crate::runtime::Object;
-use crate::stdlib::FilipeArray;
+use crate::stdlib::collections::Array;
 
 pub fn eval_let_stmt(
     rt: &mut Runtime,
@@ -50,7 +50,7 @@ pub fn eval_let_stmt(
                 rt,
                 &name,
                 Object::Array {
-                    inner: FilipeArray::new(vec![]),
+                    inner: Array::make_empty(),
                     items_type: Some(*generic),
                 },
                 expected_type,
@@ -70,7 +70,7 @@ pub fn eval_let_stmt(
                 rt,
                 &name,
                 Object::Array {
-                    inner: FilipeArray::new(vec![]),
+                    inner: Array::make_empty(),
                     items_type: Some(*generic),
                 },
                 expected_type,

@@ -5,7 +5,7 @@ use super::type_system::Type;
 use super::BlockStmt;
 use crate::stdlib::modules::Module;
 use crate::stdlib::primitives::Primitive;
-use crate::stdlib::FilipeArray;
+use crate::stdlib::collections::Array;
 
 pub enum BuiltInFuncReturnValue {
     Object(Object),
@@ -30,7 +30,7 @@ pub enum Object {
     String(Primitive<String>),
     RetVal(Box<Object>),
     Array {
-        inner: FilipeArray,
+        inner: Array,
         items_type: Option<Type>,
     },
     UserDefinedFunction {

@@ -10,8 +10,8 @@ use std::{cell::RefCell, rc::Rc};
 use self::evaluators::field_access::eval_field_access;
 use self::object::ObjectInfo;
 use crate::frontend::ast::*;
+use crate::stdlib::collections::Array;
 use crate::stdlib::primitives::make_string;
-use crate::stdlib::FilipeArray;
 use context::{Context, ContextType};
 use evaluators::func_call_evaluator::eval_call_expr;
 use evaluators::func_def_evaluator::eval_func_def;
@@ -85,12 +85,60 @@ impl Runtime {
             Object::Range { start, end, step } => {
                 self.eval_range_forloop(cursor, start, end, step, block)
             }
+            Object::Array {
+                inner,
+                items_type: _,
+            } => self.eval_array_loop(cursor, inner.inner, block),
             _ => {
                 self.error_handler
                     .set_type_error(format!("for loop works only with range (for now)"));
                 return None;
             }
         }
+    }
+
+    fn eval_array_loop(
+        &mut self,
+        cursor: String,
+        mut array: Vec<Object>,
+        block: Vec<Stmt>,
+    ) -> Option<Object> {
+        if array.is_empty() {
+            return None;
+        }
+
+        let parent_scope = Rc::clone(&self.env);
+        let loop_scope = Context::make_from(Rc::clone(&parent_scope), ContextType::Loop);
+        self.env = Rc::new(RefCell::new(loop_scope));
+
+        self.env
+            .borrow_mut()
+            .set(cursor.clone(), Type::Int, array.remove(0), true);
+
+        loop {
+            let evalted_block = self.eval_block_stmt(&block);
+
+            if self.error_handler.has_error() {
+                return None;
+            }
+
+            match evalted_block.unwrap() {
+                Object::RetVal(val) => return Some(Object::RetVal(val)),
+                _ => {}
+            }
+
+            if array.is_empty() {
+                break;
+            }
+
+            // update counter
+            self.env
+                .borrow_mut()
+                .mutate(cursor.clone(), array.remove(0));
+        }
+
+        self.env = parent_scope;
+        None
     }
 
     fn eval_range_forloop(
@@ -351,7 +399,7 @@ impl Runtime {
             self.env.borrow_mut().mutate(
                 name,
                 Object::Array {
-                    inner: FilipeArray::new(vec![]),
+                    inner: Array::make_empty(),
                     items_type: Some(old_array_items_type),
                 },
             );
@@ -514,7 +562,7 @@ impl Runtime {
     fn eval_array_literal(&mut self, array_literal: Vec<Expr>) -> Option<Object> {
         if array_literal.is_empty() {
             return Some(Object::Array {
-                inner: FilipeArray::new(vec![]),
+                inner: Array::make_empty(),
                 items_type: None,
             });
         }
@@ -545,7 +593,7 @@ impl Runtime {
         }
 
         return Some(Object::Array {
-            inner: FilipeArray::new(objects),
+            inner: Array::from(objects),
             items_type: Some(first_item_type),
         });
     }

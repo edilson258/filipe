@@ -19,6 +19,10 @@ pub fn eval_field_access(rt: &mut Runtime, src: Expr, target: Expr) -> Option<Ob
         return _eval(rt, m.fields, target);
     }
 
+    if let Object::Array { inner, items_type: _ } = src {
+        return _eval(rt, inner.fields, target);
+    }
+
     rt.error_handler
         .set_sematic(format!("Field access not impl for type {}", src.ask_type()));
     None
