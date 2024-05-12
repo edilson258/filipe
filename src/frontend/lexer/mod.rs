@@ -64,6 +64,7 @@ impl<'a> Lexer<'a> {
             '/' => Some(Token::Slash),
             ':' => Some(Token::Colon),
             '%' => Some(Token::Percet),
+            '.' => Some(Token::Dot),
             '-' => {
                 if self.next_char_is('-') {
                     self.read_char();

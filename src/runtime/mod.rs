@@ -2,21 +2,23 @@ pub mod context;
 mod evaluators;
 pub mod flstdlib;
 pub mod object;
-mod runtime_error;
-mod stdlib;
-mod type_system;
+pub mod runtime_error;
+pub mod type_system;
 
 use std::{cell::RefCell, rc::Rc};
 
+use self::evaluators::field_access::eval_field_access;
+use self::object::ObjectInfo;
 use crate::frontend::ast::*;
+use crate::stdlib::collections::Array;
+use crate::stdlib::primitives::make_string;
 use context::{Context, ContextType};
 use evaluators::func_call_evaluator::eval_call_expr;
 use evaluators::func_def_evaluator::eval_func_def;
 use evaluators::let_evaluator::eval_let_stmt;
 use object::Object;
 use runtime_error::RuntimeErrorHandler;
-use stdlib::FilipeArray;
-use type_system::{object_to_type, Type};
+use type_system::Type;
 
 pub struct Runtime {
     env: Rc<RefCell<Context>>,
@@ -83,12 +85,60 @@ impl Runtime {
             Object::Range { start, end, step } => {
                 self.eval_range_forloop(cursor, start, end, step, block)
             }
+            Object::Array {
+                inner,
+                items_type: _,
+            } => self.eval_array_loop(cursor, inner.inner, block),
             _ => {
                 self.error_handler
                     .set_type_error(format!("for loop works only with range (for now)"));
                 return None;
             }
         }
+    }
+
+    fn eval_array_loop(
+        &mut self,
+        cursor: String,
+        mut array: Vec<Object>,
+        block: Vec<Stmt>,
+    ) -> Option<Object> {
+        if array.is_empty() {
+            return None;
+        }
+
+        let parent_scope = Rc::clone(&self.env);
+        let loop_scope = Context::make_from(Rc::clone(&parent_scope), ContextType::Loop);
+        self.env = Rc::new(RefCell::new(loop_scope));
+
+        self.env
+            .borrow_mut()
+            .set(cursor.clone(), Type::Int, array.remove(0), true);
+
+        loop {
+            let evalted_block = self.eval_block_stmt(&block);
+
+            if self.error_handler.has_error() {
+                return None;
+            }
+
+            match evalted_block.unwrap() {
+                Object::RetVal(val) => return Some(Object::RetVal(val)),
+                _ => {}
+            }
+
+            if array.is_empty() {
+                break;
+            }
+
+            // update counter
+            self.env
+                .borrow_mut()
+                .mutate(cursor.clone(), array.remove(0));
+        }
+
+        self.env = parent_scope;
+        None
     }
 
     fn eval_range_forloop(
@@ -108,7 +158,22 @@ impl Runtime {
             .set(cursor.clone(), Type::Int, Object::Int(start), true);
 
         for _ in (start..end).step_by(step as usize) {
-            self.eval_block_stmt(&block);
+            let evalted_block = self.eval_block_stmt(&block);
+
+            if self.error_handler.has_error() {
+                return None;
+            }
+
+            if evalted_block.is_none() {
+                continue;
+            }
+
+            match evalted_block.unwrap() {
+                Object::RetVal(val) => return Some(Object::RetVal(val)),
+                _ => {}
+            }
+
+            // update counter
             let old_val = match self.env.borrow().resolve(&cursor).unwrap().value {
                 Object::Int(val) => val,
                 _ => return None,
@@ -148,11 +213,11 @@ impl Runtime {
         self.env = Rc::new(RefCell::new(ifelse_scope));
 
         if self.is_truthy(evaluated_cond) {
-            return Some(self.eval_block_stmt(&consequence));
+            return self.eval_block_stmt(&consequence);
         }
 
         if alternative.is_some() {
-            return Some(self.eval_block_stmt(&alternative.unwrap()));
+            return self.eval_block_stmt(&alternative.unwrap());
         }
 
         self.env = parent_scope;
@@ -168,7 +233,24 @@ impl Runtime {
             Expr::Prefix(prefix, expr) => self.eval_prefix_expr(prefix, *expr),
             Expr::Postfix(expr, postfix) => self.eval_postfix_expr(*expr, postfix),
             Expr::Assign(identifier, expr) => self.eval_assign_expr(identifier, *expr),
+            Expr::FieldAcc(src, target) => eval_field_access(self, *src, *target),
         }
+    }
+
+    fn eval_fn_call_args(&mut self, args: Vec<Expr>) -> Option<Vec<ObjectInfo>> {
+        let mut checked_args: Vec<ObjectInfo> = vec![];
+        for arg in args {
+            let arg = match self.eval_expr(arg) {
+                Some(object) => ObjectInfo {
+                    is_mut: true,
+                    type_: object.ask_type(),
+                    value: object,
+                },
+                None => return None,
+            };
+            checked_args.push(arg);
+        }
+        Some(checked_args)
     }
 
     fn eval_postfix_expr(&mut self, expr: Expr, postfix: Postfix) -> Option<Object> {
@@ -240,6 +322,12 @@ impl Runtime {
     }
 
     fn eval_return(&mut self, expr: Option<Expr>) -> Option<Object> {
+        if !self.env.borrow().in_context_type(ContextType::Function) {
+            self.error_handler
+                .set_sematic("'return' outside of function".to_string());
+            return None;
+        }
+
         if expr.is_none() {
             return Some(Object::RetVal(Box::new(Object::Null)));
         }
@@ -260,7 +348,7 @@ impl Runtime {
             }
         };
 
-        if !old_value.is_assignable {
+        if !old_value.is_mut {
             self.error_handler
                 .set_name_error(format!("'{}' is not assignable", name));
             return None;
@@ -276,7 +364,7 @@ impl Runtime {
             return None;
         }
 
-        let new_value_type = object_to_type(&new_value);
+        let new_value_type = new_value.ask_type();
 
         if old_value.type_ != new_value_type {
             self.error_handler.set_type_error(format!(
@@ -296,7 +384,7 @@ impl Runtime {
         old_array_items_type: Type,
         new_array: Object,
     ) -> Option<Object> {
-        let new_array_items_type = match object_to_type(&new_array) {
+        let new_array_items_type = match new_array.ask_type() {
             Type::Array(opt_type) => opt_type,
             _ => {
                 self.error_handler.set_type_error(format!(
@@ -311,7 +399,7 @@ impl Runtime {
             self.env.borrow_mut().mutate(
                 name,
                 Object::Array {
-                    inner: FilipeArray::new(vec![]),
+                    inner: Array::make_empty(),
                     items_type: Some(old_array_items_type),
                 },
             );
@@ -320,7 +408,7 @@ impl Runtime {
 
         let new_array_items_type = *new_array_items_type.unwrap();
 
-        if &new_array_items_type != &old_array_items_type {
+        if new_array_items_type != old_array_items_type {
             self.error_handler.set_type_error(format!(
                 "'{}' expects array of type '{}' but provided array of type '{}'",
                 name, old_array_items_type, new_array_items_type
@@ -332,13 +420,17 @@ impl Runtime {
         None
     }
 
-    fn eval_block_stmt(&mut self, block: &BlockStmt) -> Object {
+    fn eval_block_stmt(&mut self, block: &BlockStmt) -> Option<Object> {
         for stmt in block {
             if let Some(Object::RetVal(object)) = self.eval_stmt(stmt.clone()) {
-                return Object::RetVal(object);
+                return Some(Object::RetVal(object));
+            }
+
+            if self.error_handler.has_error() {
+                return None;
             }
         }
-        Object::Null
+        Some(Object::Null)
     }
 
     fn eval_infix_expr(&mut self, lhs: Expr, infix: Infix, rhs: Expr) -> Option<Object> {
@@ -352,12 +444,12 @@ impl Runtime {
         let lhs = lhs.unwrap();
         let rhs = rhs.unwrap();
 
-        if object_to_type(&lhs) != object_to_type(&rhs) {
+        if lhs.ask_type() != rhs.ask_type() {
             self.error_handler.set_type_error(format!(
                 "'{}' operation not allowed between types {} and {}",
                 infix,
-                object_to_type(&lhs),
-                object_to_type(&rhs),
+                lhs.ask_type(),
+                rhs.ask_type(),
             ));
             return None;
         }
@@ -377,7 +469,7 @@ impl Runtime {
             }
             Object::String(lval) => {
                 if let Object::String(rval) = rhs {
-                    return Some(self.eval_infix_string_expr(lval, infix, rval));
+                    return Some(self.eval_infix_string_expr(lval.value, infix, rval.value));
                 }
                 None
             }
@@ -393,7 +485,7 @@ impl Runtime {
 
     fn eval_infix_string_expr(&mut self, lhs: String, infix: Infix, rhs: String) -> Object {
         match infix {
-            Infix::Plus => Object::String(lhs.clone() + &rhs),
+            Infix::Plus => Object::String(make_string(lhs + &rhs)),
             Infix::NotEqual => Object::Boolean(lhs != rhs),
             Infix::Equal => Object::Boolean(lhs == rhs),
             _ => {
@@ -458,7 +550,7 @@ impl Runtime {
 
     fn eval_literal_expr(&mut self, literal: Literal) -> Option<Object> {
         match literal {
-            Literal::String(val) => Some(Object::String(val)),
+            Literal::String(val) => Some(Object::String(make_string(val))),
             Literal::Boolean(val) => Some(Object::Boolean(val)),
             Literal::Null => Some(Object::Null),
             Literal::Int(val) => Some(Object::Int(val)),
@@ -470,7 +562,7 @@ impl Runtime {
     fn eval_array_literal(&mut self, array_literal: Vec<Expr>) -> Option<Object> {
         if array_literal.is_empty() {
             return Some(Object::Array {
-                inner: FilipeArray::new(vec![]),
+                inner: Array::make_empty(),
                 items_type: None,
             });
         }
@@ -481,7 +573,7 @@ impl Runtime {
             None => return None,
         };
 
-        let first_item_type = object_to_type(&first_item);
+        let first_item_type = first_item.ask_type();
 
         let mut objects: Vec<Object> = vec![];
         objects.push(first_item);
@@ -492,7 +584,7 @@ impl Runtime {
                 None => return None,
             };
 
-            if first_item_type != object_to_type(&item) {
+            if first_item_type != item.ask_type() {
                 self.error_handler
                     .set_type_error("Array item's type mismatch".to_string());
                 return None;
@@ -501,7 +593,7 @@ impl Runtime {
         }
 
         return Some(Object::Array {
-            inner: FilipeArray::new(objects),
+            inner: Array::from(objects),
             items_type: Some(first_item_type),
         });
     }

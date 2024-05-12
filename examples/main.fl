@@ -31,7 +31,7 @@ if "hello" == "hell0" {
 print("10 has type ", typeof(10))
 print("10.6 has type ", typeof(10.6))
 
-print("Length of 'Hi Mom' is ", len("Hi Mom"))
+print("Length of 'Hi Mom' is ", "Hi Mom".length)
 
 let xs = [1, 2, 3]
 let ys: Array<int> = []

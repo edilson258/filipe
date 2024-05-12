@@ -13,6 +13,7 @@ pub enum Token {
     Rbrace,
     Comma,
     Colon,
+    Dot,
     
     Plus,
     Minus,
@@ -103,6 +104,7 @@ impl fmt::Display for Token {
             Self::Float(val) => write!(f, "{}", val),
             Self::TypeVoid => write!(f, "[Type Annotation] void"),
             Self::ClassArray => write!(f, "[Built-in Class] Array"),
+            Self::Dot => write!(f, "."),
         }
     }
 }

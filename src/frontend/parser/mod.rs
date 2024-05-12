@@ -165,10 +165,23 @@ impl<'a> Parser<'a> {
                     self.bump();
                     left = self.parse_postfix_expr(left.unwrap());
                 }
+                Token::Dot => {
+                    self.bump();
+                    left = self.parse_field_access_expr(left.unwrap());
+                }
                 _ => return left,
             }
         }
         left
+    }
+
+    fn parse_field_access_expr(&mut self, src: Expr) -> Option<Expr> {
+        self.bump();
+        let target = match self.parse_expr(Precedence::FieldAcc) {
+            Some(expr) => expr,
+            None => return None
+        };
+        Some(Expr::FieldAcc(Box::new(src), Box::new(target)))
     }
 
     fn parse_int_expr(&mut self) -> Option<Expr> {
@@ -358,6 +371,7 @@ impl<'a> Parser<'a> {
             | Token::GratherThan
             | Token::GratherOrEqual => Precedence::Comparison,
             Token::DoublePlus | Token::DoubleMinus => Precedence::Postfix,
+            Token::Dot => Precedence::FieldAcc,
             _ => Precedence::Lowest,
         }
     }

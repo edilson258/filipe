@@ -1,10 +1,8 @@
-use super::{
-    object::{Object, ObjectInfo},
-    type_system::Type,
-};
+use crate::runtime::object::{Object, ObjectInfo};
+use crate::runtime::type_system::Type;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ContextType {
     Global,
     Function,
@@ -36,7 +34,7 @@ impl Context {
         }
     }
 
-    pub fn set(&mut self, name: String, type_: Type, value: Object, is_assignable: bool) -> bool {
+    pub fn set(&mut self, name: String, type_: Type, value: Object, is_mut: bool) -> bool {
         if self.store.contains_key(&name) {
             return false;
         }
@@ -44,7 +42,7 @@ impl Context {
             name,
             ObjectInfo {
                 value,
-                is_assignable,
+                is_mut,
                 type_,
             },
         );
@@ -54,7 +52,7 @@ impl Context {
     pub fn mutate(&mut self, name: String, value: Object) -> bool {
         if self.store.contains_key(&name) {
             let old = self.store.get_mut(&name).unwrap();
-            if !old.is_assignable {
+            if !old.is_mut {
                 return false;
             }
             old.value = value;
@@ -70,16 +68,6 @@ impl Context {
         self.store.contains_key(name)
     }
 
-    pub fn has_deep(&self, name: &str) -> bool {
-        if self.store.contains_key(name) {
-            return true;
-        }
-        match self.parent {
-            Some(ref p) => p.borrow().has_deep(name),
-            None => false,
-        }
-    }
-
     pub fn resolve(&self, name: &str) -> Option<ObjectInfo> {
         if self.store.contains_key(name) {
             let obj = self.store.get(name).unwrap();
@@ -88,6 +76,16 @@ impl Context {
         match self.parent {
             Some(ref p) => p.borrow().resolve(name),
             None => None,
+        }
+    }
+
+    pub fn in_context_type(&self, ctx_type: ContextType) -> bool {
+        if self.type_ == ctx_type {
+            return true;
+        }
+        match self.parent {
+            Some(ref p) => p.borrow().in_context_type(ctx_type),
+            None => false,
         }
     }
 }

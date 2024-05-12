@@ -35,6 +35,7 @@ pub enum Expr {
     Prefix(Prefix, Box<Expr>),
     Postfix(Box<Expr>, Postfix),
     Assign(Identifier, Box<Expr>),
+    FieldAcc(Box<Expr>, Box<Expr>),
 }
 
 #[derive(Debug, Clone)]
@@ -64,6 +65,7 @@ pub enum Precedence {
     Product,    // *
     Prefix,     // !true || -5
     Postfix,    // 69++ || 10--
+    FieldAcc,   // Math.PI
     Call,       // myFunction(x)
 }
 

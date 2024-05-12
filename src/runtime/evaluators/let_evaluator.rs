@@ -1,7 +1,9 @@
-use crate::runtime::{
-    object_to_type, stdlib::FilipeArray, type_system::expr_type_to_object_type, Expr, ExprType,
-    Object, Runtime, Type,
-};
+use crate::frontend::ast::{Expr, ExprType};
+use crate::runtime::type_system::expr_type_to_object_type;
+use crate::runtime::type_system::Type;
+use crate::runtime::Runtime;
+use crate::runtime::Object;
+use crate::stdlib::collections::Array;
 
 pub fn eval_let_stmt(
     rt: &mut Runtime,
@@ -37,7 +39,6 @@ pub fn eval_let_stmt(
     }
 
     if let Type::Array(Some(generic)) = expected_type.clone() {
-
         if Type::Void == *generic {
             rt.error_handler
                 .set_type_error(format!("Can't declared array of type 'void'"));
@@ -49,7 +50,7 @@ pub fn eval_let_stmt(
                 rt,
                 &name,
                 Object::Array {
-                    inner: FilipeArray::new(vec![]),
+                    inner: Array::make_empty(),
                     items_type: Some(*generic),
                 },
                 expected_type,
@@ -62,14 +63,14 @@ pub fn eval_let_stmt(
             None => return,
         };
 
-        let evaluated_expr_type = object_to_type(&evaluated_expr);
+        let evaluated_expr_type = evaluated_expr.ask_type();
 
         if let Type::Array(None) = evaluated_expr_type {
             add_to_env(
                 rt,
                 &name,
                 Object::Array {
-                    inner: FilipeArray::new(vec![]),
+                    inner: Array::make_empty(),
                     items_type: Some(*generic),
                 },
                 expected_type,
@@ -90,13 +91,13 @@ pub fn eval_let_stmt(
         None => return,
     };
 
-    let evaluated_expr_type = object_to_type(&evaluated_expr);
+    let evaluated_expr_type = evaluated_expr.ask_type();
 
     if expected_type != evaluated_expr_type {
         rt.error_handler.set_type_error(format!(
             "Assigning value of type {} to variable '{name}' which has type {}",
             expected_type,
-            object_to_type(&evaluated_expr)
+            evaluated_expr.ask_type()
         ));
         return;
     }
@@ -120,7 +121,7 @@ fn eval_let_by_type_inference(e: &mut Runtime, name: String, expr: Expr) {
         return;
     }
 
-    let infered_type = object_to_type(&evaluated_expr);
+    let infered_type = evaluated_expr.ask_type();
     add_to_env(e, &name, evaluated_expr, infered_type);
 }
 
