@@ -109,7 +109,10 @@ impl Runtime {
             .set(cursor.clone(), Type::Int, Object::Int(start), true);
 
         for _ in (start..end).step_by(step as usize) {
-            self.eval_block_stmt(&block);
+            match self.eval_block_stmt(&block) {
+                Object::RetVal(object) => return Some(Object::RetVal(object)),
+                _ => {}
+            }
             let old_val = match self.env.borrow().resolve(&cursor).unwrap().value {
                 Object::Int(val) => val,
                 _ => return None,
