@@ -29,18 +29,10 @@ pub fn eval_call_expr(
         }
     };
 
-    let mut checked_args: Vec<ObjectInfo> = vec![];
-    for arg in provided_args {
-        let arg = match e.eval_expr(arg) {
-            Some(object) => ObjectInfo {
-                is_mut: true,
-                type_: object.ask_type(),
-                value: object,
-            },
-            None => return None,
-        };
-        checked_args.push(arg);
-    }
+    let checked_args: Vec<ObjectInfo> = match e.eval_fn_call_args(provided_args) {
+        Some(args) => args,
+        None => return None,
+    };
 
     let (params, body, expected_ret_type) = match fn_object {
         Object::BuiltInFunction(builtin_fn) => match builtin_fn(checked_args) {
