@@ -11,16 +11,16 @@ pub fn eval_field_access(rt: &mut Runtime, src: Expr, target: Expr) -> Option<Ob
         None => return None,
     };
 
-    if let Object::String(prim) = src {
-        return _eval(rt, prim.fields, target);
+    if let Object::String(prim) = src.clone() {
+        return _eval(rt, prim.fields, target, src);
     }
 
-    if let Object::Module(m) = src {
-        return _eval(rt, m.fields, target);
+    if let Object::Module(m) = src.clone() {
+        return _eval(rt, m.fields, target, src);
     }
 
-    if let Object::Array { inner, items_type: _ } = src {
-        return _eval(rt, inner.fields, target);
+    if let Object::Array { inner, items_type: _ } = src.clone() {
+        return _eval(rt, inner.fields, target, src);
     }
 
     rt.error_handler
@@ -28,7 +28,7 @@ pub fn eval_field_access(rt: &mut Runtime, src: Expr, target: Expr) -> Option<Ob
     None
 }
 
-fn _eval(rt: &mut Runtime, fields: FieldsManager, target: Expr) -> Option<Object> {
+fn _eval(rt: &mut Runtime, fields: FieldsManager, target: Expr, src: Object) -> Option<Object> {
     match target {
         Expr::Call(expr, args) => {
             let fn_name = match *expr {
@@ -44,7 +44,7 @@ fn _eval(rt: &mut Runtime, fields: FieldsManager, target: Expr) -> Option<Object
                 Some(object) => object,
                 None => {
                     rt.error_handler
-                        .set_name_error(format!("No method '{}' associated", fn_name));
+                        .set_name_error(format!("No method '{}' associated with {}", fn_name, src));
                     return None;
                 }
             };
@@ -55,7 +55,7 @@ fn _eval(rt: &mut Runtime, fields: FieldsManager, target: Expr) -> Option<Object
             let field = fields.access(&name);
             if field.is_none() {
                 rt.error_handler
-                    .set_name_error(format!("No field associated"));
+                    .set_name_error(format!("No field '{}' associated with {}", name, src));
                 return None;
             }
             field
