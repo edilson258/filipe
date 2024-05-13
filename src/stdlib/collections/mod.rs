@@ -2,7 +2,7 @@ use crate::runtime::object::Object;
 use core::fmt;
 use std::collections::HashMap;
 
-use super::FieldsManager;
+use super::{primitives::make_integer, FieldsManager};
 
 #[derive(Clone, Debug)]
 pub struct Array {
@@ -27,7 +27,7 @@ impl Array {
 
     fn setup_fields(len: i64) -> HashMap<String, Object> {
         let mut fields: HashMap<String, Object> = HashMap::new();
-        fields.insert("length".to_string(), Object::Int(len));
+        fields.insert("length".to_string(), Object::Int(make_integer(len)));
         fields
     }
 }

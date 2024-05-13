@@ -11,7 +11,7 @@ use self::evaluators::field_access::eval_field_access;
 use self::object::ObjectInfo;
 use crate::frontend::ast::*;
 use crate::stdlib::collections::Array;
-use crate::stdlib::primitives::make_string;
+use crate::stdlib::primitives::{make_integer, make_string};
 use context::{Context, ContextType};
 use evaluators::func_call_evaluator::eval_call_expr;
 use evaluators::func_def_evaluator::eval_func_def;
@@ -76,10 +76,13 @@ impl Runtime {
         let m = self.env.borrow().modules.access(&target);
 
         if m.is_none() {
-            self.error_handler.set_name_error(format!("No module named '{}'", target));
+            self.error_handler
+                .set_name_error(format!("No module named '{}'", target));
             return None;
         }
-        self.env.borrow_mut().set(target, Type::Module, m.unwrap()(), false);
+        self.env
+            .borrow_mut()
+            .set(target, Type::Module, m.unwrap()(), false);
         None
     }
 
@@ -165,9 +168,12 @@ impl Runtime {
         let loop_scope = Context::make_from(Rc::clone(&parent_scope), ContextType::Loop);
         self.env = Rc::new(RefCell::new(loop_scope));
 
-        self.env
-            .borrow_mut()
-            .set(cursor.clone(), Type::Int, Object::Int(start), true);
+        self.env.borrow_mut().set(
+            cursor.clone(),
+            Type::Int,
+            Object::Int(make_integer(start)),
+            true,
+        );
 
         for _ in (start..end).step_by(step as usize) {
             let evalted_block = self.eval_block_stmt(&block);
@@ -191,9 +197,10 @@ impl Runtime {
                 _ => return None,
             };
             let incrementor = if step == 0 { 1 } else { step };
-            self.env
-                .borrow_mut()
-                .mutate(cursor.clone(), Object::Int(old_val + incrementor));
+            self.env.borrow_mut().mutate(
+                cursor.clone(),
+                Object::Int(make_integer(old_val.value + incrementor)),
+            );
         }
 
         self.env = parent_scope;
@@ -203,7 +210,7 @@ impl Runtime {
     fn is_truthy(&mut self, object: Object) -> bool {
         match object {
             Object::Null | Object::Boolean(false) => false,
-            Object::Int(val) => val != 0,
+            Object::Int(val) => val.value != 0,
             Object::Float(val) => val != 0.0,
             _ => true,
         }
@@ -283,8 +290,8 @@ impl Runtime {
         };
 
         match postfix {
-            Postfix::Increment => Some(Object::Int(old_value + 1)),
-            Postfix::Decrement => Some(Object::Int(old_value - 1)),
+            Postfix::Increment => Some(Object::Int(make_integer(old_value.value + 1))),
+            Postfix::Decrement => Some(Object::Int(make_integer(old_value.value - 1))),
         }
     }
 
@@ -323,7 +330,7 @@ impl Runtime {
 
     fn eval_minus_prefix(&mut self, prefix: Prefix, evaluated_expr: Object) -> Option<Object> {
         match evaluated_expr {
-            Object::Int(val) => Some(Object::Int(-val)),
+            Object::Int(val) => Some(Object::Int(make_integer(-val.value))),
             Object::Float(val) => Some(Object::Float(-val)),
             _ => {
                 self.error_handler
@@ -469,7 +476,7 @@ impl Runtime {
         match lhs {
             Object::Int(lval) => {
                 if let Object::Int(rval) = rhs {
-                    return Some(self.eval_infix_int_expr(lval, infix, rval));
+                    return Some(self.eval_infix_int_expr(lval.value, infix, rval.value));
                 }
                 None
             }
@@ -512,11 +519,11 @@ impl Runtime {
 
     fn eval_infix_int_expr(&mut self, lhs_val: i64, infix: Infix, rhs_val: i64) -> Object {
         match infix {
-            Infix::Plus => Object::Int(lhs_val + rhs_val),
-            Infix::Minus => Object::Int(lhs_val - rhs_val),
-            Infix::Devide => Object::Int(lhs_val / rhs_val),
-            Infix::Multiply => Object::Int(lhs_val * rhs_val),
-            Infix::Remainder => Object::Int(lhs_val % rhs_val),
+            Infix::Plus => Object::Int(make_integer(lhs_val + rhs_val)),
+            Infix::Minus => Object::Int(make_integer(lhs_val - rhs_val)),
+            Infix::Devide => Object::Int(make_integer(lhs_val / rhs_val)),
+            Infix::Multiply => Object::Int(make_integer(lhs_val * rhs_val)),
+            Infix::Remainder => Object::Int(make_integer(lhs_val % rhs_val)),
             Infix::Equal => Object::Boolean(lhs_val == rhs_val),
             Infix::LessThan => Object::Boolean(lhs_val < rhs_val),
             Infix::LessOrEqual => Object::Boolean(lhs_val <= rhs_val),
@@ -565,7 +572,7 @@ impl Runtime {
             Literal::String(val) => Some(Object::String(make_string(val))),
             Literal::Boolean(val) => Some(Object::Boolean(val)),
             Literal::Null => Some(Object::Null),
-            Literal::Int(val) => Some(Object::Int(val)),
+            Literal::Int(val) => Some(Object::Int(make_integer(val))),
             Literal::Float(val) => Some(Object::Float(val)),
             Literal::Array(val) => self.eval_array_literal(val),
         }

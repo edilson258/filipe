@@ -79,7 +79,7 @@ fn filipe_exit(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     }
 
     match args[0].value.clone() {
-        Object::Int(val) => std::process::exit(val as i32),
+        Object::Int(val) => std::process::exit(val.value as i32),
         _ => BuiltInFuncReturnValue::Error(RuntimeError {
             kind: ErrorKind::ArgumentError,
             msg: "'exit' only accepts an integer argument".to_string(),
@@ -126,7 +126,7 @@ fn filipe_range(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
 
     for item in args {
         let value = match item.value {
-            Object::Int(x) => x,
+            Object::Int(x) => x.value,
             _ => 0,
         };
 

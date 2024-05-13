@@ -15,7 +15,7 @@ pub fn module_io() -> Object {
 fn io_puts(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
     for arg in args {
         match &arg.value {
-            Object::Int(val) => print!("{}", val),
+            Object::Int(val) => print!("{}", val.value),
             Object::Float(val) => print!("{}", val),
             Object::String(val) => print!("{}", val.value),
             Object::Null => print!("null"),
