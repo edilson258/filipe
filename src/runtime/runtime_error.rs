@@ -6,6 +6,7 @@ pub enum ErrorKind {
     TypeError,
     ArgumentError,
     SemanticError,
+    IOError,
 }
 
 #[derive(Clone)]
@@ -65,6 +66,7 @@ impl fmt::Display for ErrorKind {
             Self::TypeError => write!(f, "[Type Error]"),
             Self::ArgumentError => write!(f, "[Argument Error]"),
             Self::SemanticError => write!(f, "[Semantic Error]"),
+            Self::IOError => write!(f, "[IO Error]"),
         }
     }
 }
