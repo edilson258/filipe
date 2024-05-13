@@ -140,7 +140,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_identifier(&mut self) -> Token {
-        let literal = self.chop_while(|x| x.is_alphanumeric());
+        let literal = self.chop_while(|x| x.is_alphanumeric() || x == '_');
         // look for keywords
         match literal.as_str() {
             "let" => Token::Let,
@@ -176,7 +176,7 @@ impl<'a> Lexer<'a> {
     fn read_number(&mut self) -> Token {
         let literal = self.chop_while(|x| x.is_numeric() || x == '.');
         if literal.contains(".") {
-            return Token::Float(literal.parse::<f64>().unwrap());
+            return Token::Float(literal.parse::<f64>().unwrap_or(0.0));
         }
         return Token::Int(literal.parse::<i64>().unwrap());
     }
