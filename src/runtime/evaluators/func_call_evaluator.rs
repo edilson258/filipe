@@ -29,7 +29,7 @@ pub fn eval_call_expr(
         }
     };
 
-    eval_call(rt, fn_name, fn_object, provided_args)
+    eval_call(rt, fn_name, fn_object, provided_args, vec![])
 }
 
 pub fn eval_call(
@@ -37,11 +37,14 @@ pub fn eval_call(
     fn_name: String,
     fn_object: Object,
     provided_args: Vec<Expr>,
+    extra_args: Vec<ObjectInfo>,
 ) -> Option<Object> {
-    let checked_args: Vec<ObjectInfo> = match rt.eval_fn_call_args(provided_args) {
+    let mut checked_args: Vec<ObjectInfo> = match rt.eval_fn_call_args(provided_args) {
         Some(args) => args,
         None => return None,
     };
+
+    checked_args.extend(extra_args);
 
     let (params, body, expected_ret_type) = match fn_object {
         Object::BuiltInFunction(builtin_fn) => match builtin_fn(checked_args) {

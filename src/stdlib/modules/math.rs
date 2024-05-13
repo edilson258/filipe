@@ -26,8 +26,8 @@ fn module_math_sqrt(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
         });
     }
 
-    match args[0].value {
-        Object::Int(x) => BuiltInFuncReturnValue::Object(Object::Float(f64::sqrt(x as f64))),
+    match args[0].value.clone() {
+        Object::Int(x) => BuiltInFuncReturnValue::Object(Object::Float(f64::sqrt(x.value as f64))),
         Object::Float(x) => BuiltInFuncReturnValue::Object(Object::Float(f64::sqrt(x))),
         _ => BuiltInFuncReturnValue::Error(RuntimeError {
             kind: ErrorKind::ArgumentError,
