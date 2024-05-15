@@ -42,11 +42,25 @@ pub fn eval_field_access(rt: &mut Runtime, src: Expr, target: Expr) -> Option<Ob
         Object::Module(m) => {
             return _eval(rt, m.fields, target, src, vec![]);
         }
-        Object::Array {
-            inner,
-            items_type: _,
-        } => {
-            return _eval(rt, inner.fields, target, src, vec![]);
+        Object::Array { inner, items_type } => {
+            return _eval(
+                rt,
+                inner.fields.clone(),
+                target,
+                src,
+                vec![ObjectInfo {
+                    is_mut: false,
+                    value: Object::Array {
+                        inner,
+                        items_type: items_type.clone(),
+                    },
+                    type_: Type::Array(if items_type.is_none() {
+                        None
+                    } else {
+                        Some(Box::new(items_type.unwrap()))
+                    }),
+                }],
+            );
         }
         _ => {
             rt.error_handler
