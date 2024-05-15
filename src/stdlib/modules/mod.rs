@@ -34,8 +34,8 @@ pub struct ModulesManager {
 impl ModulesManager {
     pub fn setup() -> Self {
         let mut modules: HashMap<String, ModInit> = HashMap::new();
-        modules.insert("Math".to_string(), module_math);
-        modules.insert("IO".to_string(), module_io);
+        modules.insert("math".to_string(), module_math);
+        modules.insert("io".to_string(), module_io);
         modules.insert("random".to_string(), module_random);
         Self { modules }
     }

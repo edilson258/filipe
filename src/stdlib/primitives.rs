@@ -20,18 +20,18 @@ impl<T> Primitive<T> {
 }
 
 pub fn make_string(value: String) -> Primitive<String> {
-    let mut str_fields: HashMap<String, Object> = HashMap::new();
-    str_fields.insert("length".to_string(), Object::Int(make_integer(value.len() as i64)));
-    Primitive::<String>::make(value, str_fields)
+    let mut fields: HashMap<String, Object> = HashMap::new();
+    fields.insert("length".to_string(), Object::Int(make_integer(value.len() as i64)));
+    Primitive::<String>::make(value, fields)
 }
 
 pub fn make_integer(value: i64) -> Primitive<i64> {
-    let mut str_fields: HashMap<String, Object> = HashMap::new();
-    str_fields.insert(
+    let mut fields: HashMap<String, Object> = HashMap::new();
+    fields.insert(
         "as_float".to_string(),
         Object::BuiltInFunction(integer_as_float),
     );
-    Primitive::<i64>::make(value, str_fields)
+    Primitive::<i64>::make(value, fields)
 }
 
 fn integer_as_float(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {

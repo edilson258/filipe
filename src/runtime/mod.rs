@@ -1,4 +1,3 @@
-pub mod context;
 mod evaluators;
 pub mod flstdlib;
 pub mod object;
@@ -9,10 +8,10 @@ use std::{cell::RefCell, rc::Rc};
 
 use self::evaluators::field_access::eval_field_access;
 use self::object::ObjectInfo;
+use crate::context::{Context, ContextType};
 use crate::frontend::ast::*;
 use crate::stdlib::collections::Array;
 use crate::stdlib::primitives::{make_integer, make_string};
-use context::{Context, ContextType};
 use evaluators::func_call_evaluator::eval_call_expr;
 use evaluators::func_def_evaluator::eval_func_def;
 use evaluators::let_evaluator::eval_let_stmt;
@@ -594,8 +593,7 @@ impl Runtime {
 
         let first_item_type = first_item.ask_type();
 
-        let mut objects: Vec<Object> = vec![];
-        objects.push(first_item);
+        let mut objects: Vec<Object> = vec![first_item];
 
         for expr in expr_array {
             let item = match self.eval_expr(expr) {

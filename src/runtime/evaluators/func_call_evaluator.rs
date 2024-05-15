@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::super::object::*;
-use crate::runtime::context::{Context, ContextType};
+use crate::context::{Context, ContextType};
 use crate::runtime::type_system::Type;
 use crate::runtime::{Expr, Identifier, Runtime};
 

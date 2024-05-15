@@ -12,7 +12,7 @@ pub fn module_math() -> Object {
         "sqrt".to_string(),
         Object::BuiltInFunction(module_math_sqrt),
     );
-    Object::Module(Module::make("Math".to_string(), math_fields))
+    Object::Module(Module::make("math".to_string(), math_fields))
 }
 
 fn module_math_sqrt(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
@@ -20,7 +20,7 @@ fn module_math_sqrt(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
         return BuiltInFuncReturnValue::Error(RuntimeError {
             kind: ErrorKind::ArgumentError,
             msg: format!(
-                "Math.sqrt(x) expects 1 argument but provided {}",
+                "math.sqrt(x) expects 1 argument but provided {}",
                 args.len()
             ),
         });
@@ -31,7 +31,7 @@ fn module_math_sqrt(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
         Object::Float(x) => BuiltInFuncReturnValue::Object(Object::Float(f64::sqrt(x))),
         _ => BuiltInFuncReturnValue::Error(RuntimeError {
             kind: ErrorKind::ArgumentError,
-            msg: format!("Math.sqrt(x) expects argument of type int or float"),
+            msg: format!("math.sqrt(x) expects argument of type int or float"),
         }),
     }
 }

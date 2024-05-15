@@ -2,9 +2,10 @@ use std::cell::RefCell;
 use std::process::exit;
 use std::rc::Rc;
 
+use crate::context::Context;
 use crate::frontend::lexer::Lexer;
 use crate::frontend::parser::Parser;
-use crate::runtime::{context::Context, flstdlib::builtins, Runtime};
+use crate::runtime::{flstdlib::builtins, Runtime};
 use crate::utils::read_file;
 
 pub fn run_from_file(path: &str) {
