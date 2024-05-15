@@ -9,21 +9,22 @@ Filipe still primitive and limited although it has support for:
 - if-else statments
 - loop statments
 - Native Data types `int`, `float`, `boolean`, `string`, `null`
-- Built-in function `len`, `typeof`, `print`
+- Built-in function `typeof`
 - User defined functions
+- Import Builtin Modules `io`, `math`, `random`
 - Arrays (experimental)
 
-Filipe was design to be a high level programming language and beginner friendly, that why it has a clear syntax and an enhanced error reporting mechanisms.
+Filipe was designed to be a high level programming language and beginner friendly, that why it has a clear syntax and an enhanced error reporting mechanisms.
 
 # Examples
 
 1. hello world
 
 ```python
-import IO
+import io
 
 define main(): void {
-  IO.puts("Hello, world!")
+  io.puts("Hello, world!")
 }
 
 main()
@@ -32,29 +33,31 @@ main()
 2. more examples...
 
 ```python
+import io
+
 let name: string = "Jonh Harvard"
 let age = 87
 let height: float = 1.86
 let favoriteLangs = ["Haskell", "Ocaml", "Rust"]
 
 if height >= 1.90 {
-    IO.puts(name, " is tall above avg.")
+    io.puts(name, " is tall above avg.")
 } else {
-    IO.puts(name, " isn't so much tall")
+    io.puts(name, " isn't so much tall")
 }
 
 for x in range(0, 10) {
     if x % 2 == 0 {
-        IO.puts(x, " is even")
+        io.puts(x, " is even")
     }
 }
 
-IO.puts(name)
-IO.puts(height)
+io.puts(name)
+io.puts(height)
 
-IO.puts("Favorite prog. lang.: ")
+io.puts("Favorite prog. lang.: ")
 for lang in favoriteLangs {
-    IO.puts(lang)
+    io.puts(lang)
 }
 
 ```

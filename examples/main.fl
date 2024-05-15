@@ -1,9 +1,9 @@
-import IO
+import io
 
-IO.puts("Hello, World!")
+io.puts("Hello, World!")
 
 define sayHelloTo(name: string): void {
-  IO.puts("Hello, ", name)
+  io.puts("Hello, ", name)
 }
 
 sayHelloTo("Edilson")
@@ -16,29 +16,29 @@ define sumTwoInts(x: int, y: int): int {
   return x + y
 }
 
-IO.puts("34 + 35 = ", sumTwoInts(x, y))
+io.puts("34 + 35 = ", sumTwoInts(x, y))
 
 for x in range(0, 10) {
   if x % 2 == 0 {
-    IO.puts(x, " is even")
+    io.puts(x, " is even")
   } else {
-    IO.puts(x, " is odd")
+    io.puts(x, " is odd")
   }
 }
 
 if "hello" == "hell0" {
-  IO.puts("hello and hell0 are equal")
+  io.puts("hello and hell0 are equal")
 }
 
-IO.puts("10 has type ", typeof(10))
-IO.puts("10.6 has type ", typeof(10.6))
+io.puts("10 has type ", typeof(10))
+io.puts("10.6 has type ", typeof(10.6))
 
-IO.puts("Length of 'Hi Mom' is ", "Hi Mom".length)
+io.puts("Length of 'Hi Mom' is ", "Hi Mom".length)
 
 let xs = [1, 2, 3]
 let ys: Array<int> = []
 ys = [10, 20, 30]
 let zs: Array<boolean> = [true, false]
 zs = [true, true, true, true]
-IO.puts(xs, ys, zs)
+io.puts(xs, ys, zs)
 zs = []
