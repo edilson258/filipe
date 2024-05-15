@@ -117,7 +117,11 @@ pub fn eval_call(
     }
 
     rt.env = global_scope;
-    returned_value
+
+    match returned_value.clone().unwrap() {
+        Object::RetVal(v) => Some(*v),
+        _ => returned_value,
+    }
 }
 
 fn is_types_equivalents(lhs: &Type, rhs: &Type) -> bool {
