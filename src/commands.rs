@@ -5,7 +5,8 @@ use std::rc::Rc;
 use crate::context::Context;
 use crate::frontend::lexer::Lexer;
 use crate::frontend::parser::Parser;
-use crate::runtime::{flstdlib::builtins, Runtime};
+use crate::runtime::Runtime;
+use crate::stdlib::builtins::builtins;
 use crate::utils::read_file;
 
 pub fn run_from_file(path: &str) {

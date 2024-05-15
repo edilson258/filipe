@@ -1,5 +1,4 @@
 mod evaluators;
-pub mod flstdlib;
 pub mod object;
 pub mod runtime_error;
 pub mod type_system;

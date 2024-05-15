@@ -7,7 +7,7 @@ use rustyline::DefaultEditor;
 use crate::frontend::lexer::Lexer;
 use crate::frontend::parser::Parser;
 use crate::context::Context;
-use crate::runtime::flstdlib::builtins;
+use crate::stdlib::builtins::builtins;
 use crate::runtime::object::Object;
 use crate::runtime::Runtime;
 

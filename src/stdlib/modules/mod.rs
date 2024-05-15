@@ -1,13 +1,17 @@
 mod io;
 mod math;
 mod random;
+mod sys;
+
+use std::collections::HashMap;
 
 use super::FieldsManager;
 use crate::runtime::object::Object;
+
 use io::module_io;
 use math::module_math;
 use random::module_random;
-use std::collections::HashMap;
+use sys::module_sys;
 
 #[derive(Clone, Debug)]
 pub struct Module {
@@ -37,6 +41,7 @@ impl ModulesManager {
         modules.insert("math".to_string(), module_math);
         modules.insert("io".to_string(), module_io);
         modules.insert("random".to_string(), module_random);
+        modules.insert("sys".to_string(), module_sys);
         Self { modules }
     }
 
