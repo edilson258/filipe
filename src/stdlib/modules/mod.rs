@@ -1,10 +1,12 @@
-pub mod math;
-pub mod io;
-
-use self::{io::module_io, math::module_math};
+mod io;
+mod math;
+mod random;
 
 use super::FieldsManager;
 use crate::runtime::object::Object;
+use io::module_io;
+use math::module_math;
+use random::module_random;
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
@@ -34,6 +36,7 @@ impl ModulesManager {
         let mut modules: HashMap<String, ModInit> = HashMap::new();
         modules.insert("Math".to_string(), module_math);
         modules.insert("IO".to_string(), module_io);
+        modules.insert("random".to_string(), module_random);
         Self { modules }
     }
 
