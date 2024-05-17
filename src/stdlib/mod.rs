@@ -1,6 +1,7 @@
 pub mod modules;
 pub mod primitives;
 pub mod collections;
+pub mod builtins;
 
 use crate::runtime::object::Object;
 use std::collections::HashMap;

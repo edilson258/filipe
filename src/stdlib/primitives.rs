@@ -20,18 +20,69 @@ impl<T> Primitive<T> {
 }
 
 pub fn make_string(value: String) -> Primitive<String> {
-    let mut str_fields: HashMap<String, Object> = HashMap::new();
-    str_fields.insert("length".to_string(), Object::Int(make_integer(value.len() as i64)));
-    Primitive::<String>::make(value, str_fields)
+    let mut fields: HashMap<String, Object> = HashMap::new();
+    fields.insert("length".to_string(), Object::BuiltInFunction(string_length));
+    fields.insert(
+        "as_int".to_string(),
+        Object::BuiltInFunction(string_as_integer),
+    );
+    Primitive::<String>::make(value, fields)
+}
+
+fn string_as_integer(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
+    if args.len() != 1 {
+        return BuiltInFuncReturnValue::Error(RuntimeError {
+            kind: ErrorKind::ArgumentError,
+            msg: format!("str.as_int takes 0 args but provided {}", args.len() - 1),
+        });
+    }
+
+    let str = match args[0].value.clone() {
+        Object::String(val) => val.value,
+        _ => "".to_string(),
+    };
+
+    let int = match str.parse::<i64>() {
+        Ok(val) => val,
+        Err(_) => {
+            return BuiltInFuncReturnValue::Error(RuntimeError {
+                kind: ErrorKind::ArgumentError,
+                msg: format!("Couldn't convert '{}' to int", str),
+            });
+        }
+    };
+
+    BuiltInFuncReturnValue::Object(Object::Int(make_integer(int)))
+}
+
+fn string_length(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
+    if args.len() != 1 {
+        return BuiltInFuncReturnValue::Error(RuntimeError {
+            kind: ErrorKind::ArgumentError,
+            msg: format!("method length takes 0 args but provided {}", args.len() - 1),
+        });
+    }
+
+    let len = match &args[0].value {
+        Object::String(prim) => prim.value.len(),
+        _ => {
+            return BuiltInFuncReturnValue::Error(RuntimeError {
+                kind: ErrorKind::ArgumentError,
+                msg: format!("method length accept string only"),
+            });
+        }
+    };
+
+    BuiltInFuncReturnValue::Object(Object::Int(make_integer(len as i64)))
 }
 
 pub fn make_integer(value: i64) -> Primitive<i64> {
-    let mut str_fields: HashMap<String, Object> = HashMap::new();
-    str_fields.insert(
+    let mut fields: HashMap<String, Object> = HashMap::new();
+    fields.insert(
         "as_float".to_string(),
         Object::BuiltInFunction(integer_as_float),
     );
-    Primitive::<i64>::make(value, str_fields)
+    Primitive::<i64>::make(value, fields)
 }
 
 fn integer_as_float(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {

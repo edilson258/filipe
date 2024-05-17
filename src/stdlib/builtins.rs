@@ -1,19 +1,10 @@
-use super::object::{BuiltInFuncReturnValue, Object, ObjectInfo};
-use super::runtime_error::{ErrorKind, RuntimeError};
-use super::type_system::Type;
+use crate::runtime::object::{BuiltInFuncReturnValue, Object, ObjectInfo};
+use crate::runtime::runtime_error::{ErrorKind, RuntimeError};
+use crate::runtime::type_system::Type;
 use std::collections::HashMap;
 
 pub fn builtins() -> HashMap<String, ObjectInfo> {
     let mut builtin_list: HashMap<String, ObjectInfo> = HashMap::new();
-
-    builtin_list.insert(
-        "exit".to_string(),
-        ObjectInfo {
-            is_mut: false,
-            type_: Type::Function,
-            value: Object::BuiltInFunction(filipe_exit),
-        },
-    );
 
     builtin_list.insert(
         "typeof".to_string(),
@@ -61,30 +52,6 @@ pub fn builtins() -> HashMap<String, ObjectInfo> {
     );
 
     builtin_list
-}
-
-fn filipe_exit(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
-    if args.is_empty() {
-        std::process::exit(0);
-    }
-
-    if args.len() != 1 {
-        return BuiltInFuncReturnValue::Error(RuntimeError {
-            kind: ErrorKind::ArgumentError,
-            msg: format!(
-                "'exit' expects 0 or 1 argument but {} were provided",
-                args.len()
-            ),
-        });
-    }
-
-    match args[0].value.clone() {
-        Object::Int(val) => std::process::exit(val.value as i32),
-        _ => BuiltInFuncReturnValue::Error(RuntimeError {
-            kind: ErrorKind::ArgumentError,
-            msg: "'exit' only accepts an integer argument".to_string(),
-        }),
-    }
 }
 
 fn filipe_typeof(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {

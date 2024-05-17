@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::super::object::*;
-use crate::runtime::context::{Context, ContextType};
+use crate::context::{Context, ContextType};
 use crate::runtime::type_system::Type;
 use crate::runtime::{Expr, Identifier, Runtime};
 
@@ -117,7 +117,11 @@ pub fn eval_call(
     }
 
     rt.env = global_scope;
-    returned_value
+
+    match returned_value.clone().unwrap() {
+        Object::RetVal(v) => Some(*v),
+        _ => returned_value,
+    }
 }
 
 fn is_types_equivalents(lhs: &Type, rhs: &Type) -> bool {

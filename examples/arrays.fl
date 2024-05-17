@@ -1,18 +1,18 @@
-import IO
+import io
 
 define main(): void {
   let nums = [34, 35, 69, 420]
   let fruits = ["Apple", "Orange"]
   let points: Array<float> = []
 
-  IO.puts("Nums: ", nums)
+  io.puts("Nums: ", nums)
 
-  IO.puts("Fruits:")
+  io.puts("Fruits:")
   for f in fruits {
-    IO.puts(f)
+    io.puts(f)
   }
 
-  IO.puts("Points: ", points)
+  io.puts("Points: ", points)
 }
 
 main()

@@ -6,8 +6,8 @@ use rustyline::DefaultEditor;
 
 use crate::frontend::lexer::Lexer;
 use crate::frontend::parser::Parser;
-use crate::runtime::context::Context;
-use crate::runtime::flstdlib::builtins;
+use crate::context::Context;
+use crate::stdlib::builtins::builtins;
 use crate::runtime::object::Object;
 use crate::runtime::Runtime;
 
@@ -79,6 +79,7 @@ fn eval_repl_line(line: String, env: Rc<RefCell<Context>>) {
         std::process::exit(0);
     }
 
+    // @TODO: avoid creating new objects
     let input = line.chars().collect::<Vec<char>>();
     let mut l = Lexer::new(&input);
     let mut p = Parser::new(&mut l);

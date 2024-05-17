@@ -9,7 +9,7 @@ pub fn module_io() -> Object {
     let mut io_fields: HashMap<String, Object> = HashMap::new();
     io_fields.insert("puts".to_string(), Object::BuiltInFunction(io_puts));
     io_fields.insert("gets".to_string(), Object::BuiltInFunction(io_gets));
-    Object::Module(Module::make("IO".to_string(), io_fields))
+    Object::Module(Module::make("io".to_string(), io_fields))
 }
 
 fn io_puts(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
@@ -53,7 +53,7 @@ fn io_gets(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
                 return BuiltInFuncReturnValue::Error(RuntimeError {
                     kind: ErrorKind::ArgumentError,
                     msg: format!(
-                        "'IO.gets' expects argument of type string but provided type {}",
+                        "'io.gets' expects argument of type string but provided type {}",
                         args[0].value.ask_type()
                     ),
                 });
@@ -63,7 +63,7 @@ fn io_gets(args: Vec<ObjectInfo>) -> BuiltInFuncReturnValue {
             return BuiltInFuncReturnValue::Error(RuntimeError {
                 kind: ErrorKind::ArgumentError,
                 msg: format!(
-                    "'IO.gets' expects 0 or 1 argument but provided '{}'",
+                    "'io.gets' expects 0 or 1 argument but provided '{}'",
                     args.len()
                 ),
             });

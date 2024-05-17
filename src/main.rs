@@ -4,6 +4,7 @@ mod frontend;
 mod runtime;
 mod utils;
 mod stdlib;
+mod context;
 
 use std::{env, process::exit};
 
